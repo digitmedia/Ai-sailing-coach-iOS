@@ -19,19 +19,19 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 // Main content
-                VStack(spacing: 0) {
-                    // Status bar spacer
+                VStack(spacing: 16) {
+                    // Top spacer for status bar
                     Spacer()
-                        .frame(height: 60)
+                        .frame(height: 20)
 
-                    // Instrument Panel
+                    // Instrument Panel - fills available space
                     InstrumentPanelView(
                         sailingData: viewModel.sailingData
                     )
-                    .frame(maxWidth: 448)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 16)
 
                     Spacer()
+                        .frame(minHeight: 20, maxHeight: 40)
 
                     // AI Coach Button
                     CoachButtonView(
@@ -40,7 +40,7 @@ struct ContentView: View {
                         onPressStart: { viewModel.startPushToTalk() },
                         onPressEnd: { viewModel.stopPushToTalk() }
                     )
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 24)
                 }
 
                 // Coach message overlay
@@ -78,7 +78,7 @@ struct InstrumentPanelView: View {
     var body: some View {
         // Bezel effect container
         VStack(spacing: 0) {
-            VStack(spacing: 24) {
+            VStack(spacing: 16) {
                 // Compass Rose
                 CompassRoseView(
                     courseOverGround: sailingData.courseOverGround,
@@ -93,15 +93,15 @@ struct InstrumentPanelView: View {
                     targetSpeed: sailingData.targetSpeed
                 )
             }
-            .padding(24)
+            .padding(16)
             .background(LinearGradient.panelBackground)
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
         }
-        .padding(12)
+        .padding(8)
         .background(LinearGradient.bezelBackground)
-        .cornerRadius(24)
-        .shadow(color: .black.opacity(0.5), radius: 20, x: 0, y: 10)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.5), radius: 15, x: 0, y: 8)
     }
 }
 
