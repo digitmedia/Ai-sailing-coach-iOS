@@ -1,0 +1,542 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		/* App */
+		AA0001 /* AISailingCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001; };
+
+		/* Models */
+		AA0002 /* SailingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002; };
+		AA0003 /* SignalKMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003; };
+
+		/* Views */
+		AA0004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0004; };
+		AA0005 /* CompassRoseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0005; };
+		AA0006 /* DataBoxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0006; };
+		AA0007 /* PerformanceGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0007; };
+		AA0008 /* CoachButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0008; };
+		AA0009 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0009; };
+		AA0010 /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0010; };
+
+		/* ViewModels */
+		AA0011 /* SailingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0011; };
+
+		/* Services */
+		AA0012 /* SignalKSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0012; };
+		AA0013 /* GeminiCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0013; };
+		AA0014 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014; };
+
+		/* Configuration */
+		AA0015 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015; };
+
+		/* Resources */
+		AA0016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0016; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		/* Product */
+		CC0001 /* AISailingCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AISailingCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+
+		/* App */
+		BB0001 /* AISailingCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISailingCoachApp.swift; sourceTree = "<group>"; };
+
+		/* Models */
+		BB0002 /* SailingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SailingData.swift; sourceTree = "<group>"; };
+		BB0003 /* SignalKMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalKMessage.swift; sourceTree = "<group>"; };
+
+		/* Views */
+		BB0004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BB0005 /* CompassRoseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassRoseView.swift; sourceTree = "<group>"; };
+		BB0006 /* DataBoxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBoxesView.swift; sourceTree = "<group>"; };
+		BB0007 /* PerformanceGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceGaugeView.swift; sourceTree = "<group>"; };
+		BB0008 /* CoachButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachButtonView.swift; sourceTree = "<group>"; };
+		BB0009 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BB0010 /* ColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensions.swift; sourceTree = "<group>"; };
+
+		/* ViewModels */
+		BB0011 /* SailingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SailingViewModel.swift; sourceTree = "<group>"; };
+
+		/* Services */
+		BB0012 /* SignalKSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalKSimulator.swift; sourceTree = "<group>"; };
+		BB0013 /* GeminiCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiCoachService.swift; sourceTree = "<group>"; };
+		BB0014 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+
+		/* Configuration */
+		BB0015 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		BB0017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+
+		/* Resources */
+		BB0016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DD0001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		/* Root */
+		EE0001 = {
+			isa = PBXGroup;
+			children = (
+				EE0002 /* AISailingCoach */,
+				EE0003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+
+		/* Products */
+		EE0003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CC0001 /* AISailingCoach.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+
+		/* AISailingCoach */
+		EE0002 /* AISailingCoach */ = {
+			isa = PBXGroup;
+			children = (
+				EE0004 /* App */,
+				EE0005 /* Models */,
+				EE0006 /* Views */,
+				EE0007 /* ViewModels */,
+				EE0008 /* Services */,
+				EE0009 /* Configuration */,
+				BB0016 /* Assets.xcassets */,
+				BB0017 /* Info.plist */,
+			);
+			path = AISailingCoach;
+			sourceTree = "<group>";
+		};
+
+		/* App */
+		EE0004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BB0001 /* AISailingCoachApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+
+		/* Models */
+		EE0005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BB0002 /* SailingData.swift */,
+				BB0003 /* SignalKMessage.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+
+		/* Views */
+		EE0006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BB0004 /* ContentView.swift */,
+				EE0010 /* Instruments */,
+				EE0011 /* Coach */,
+				EE0012 /* Settings */,
+				EE0013 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+
+		/* Instruments */
+		EE0010 /* Instruments */ = {
+			isa = PBXGroup;
+			children = (
+				BB0005 /* CompassRoseView.swift */,
+				BB0006 /* DataBoxesView.swift */,
+				BB0007 /* PerformanceGaugeView.swift */,
+			);
+			path = Instruments;
+			sourceTree = "<group>";
+		};
+
+		/* Coach */
+		EE0011 /* Coach */ = {
+			isa = PBXGroup;
+			children = (
+				BB0008 /* CoachButtonView.swift */,
+			);
+			path = Coach;
+			sourceTree = "<group>";
+		};
+
+		/* Settings */
+		EE0012 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				BB0009 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+
+		/* Components */
+		EE0013 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				BB0010 /* ColorExtensions.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+
+		/* ViewModels */
+		EE0007 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BB0011 /* SailingViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+
+		/* Services */
+		EE0008 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BB0012 /* SignalKSimulator.swift */,
+				BB0013 /* GeminiCoachService.swift */,
+				BB0014 /* SpeechService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+
+		/* Configuration */
+		EE0009 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				BB0015 /* Secrets.swift */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF0001 /* AISailingCoach */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = GG0001 /* Build configuration list for PBXNativeTarget "AISailingCoach" */;
+			buildPhases = (
+				DD0002 /* Sources */,
+				DD0001 /* Frameworks */,
+				DD0003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AISailingCoach;
+			productName = AISailingCoach;
+			productReference = CC0001 /* AISailingCoach.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		HH0001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					FF0001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = GG0002 /* Build configuration list for PBXProject "AISailingCoach" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = EE0001;
+			productRefGroup = EE0003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF0001 /* AISailingCoach */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DD0003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0016 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DD0002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0001 /* AISailingCoachApp.swift in Sources */,
+				AA0002 /* SailingData.swift in Sources */,
+				AA0003 /* SignalKMessage.swift in Sources */,
+				AA0004 /* ContentView.swift in Sources */,
+				AA0005 /* CompassRoseView.swift in Sources */,
+				AA0006 /* DataBoxesView.swift in Sources */,
+				AA0007 /* PerformanceGaugeView.swift in Sources */,
+				AA0008 /* CoachButtonView.swift in Sources */,
+				AA0009 /* SettingsView.swift in Sources */,
+				AA0010 /* ColorExtensions.swift in Sources */,
+				AA0011 /* SailingViewModel.swift in Sources */,
+				AA0012 /* SignalKSimulator.swift in Sources */,
+				AA0013 /* GeminiCoachService.swift in Sources */,
+				AA0014 /* SpeechService.swift in Sources */,
+				AA0015 /* Secrets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		II0001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		II0002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		II0003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AISailingCoach/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AISailingCoach/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Sailing Coach";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "AI Sailing Coach connects to Bluetooth wind sensors and marine instruments for accurate wind data.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "AI Sailing Coach connects to Bluetooth wind sensors and marine instruments for accurate wind data.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "AI Sailing Coach connects to Signal K servers on your local network for real-time boat data.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "AI Sailing Coach needs continuous location access to track your sailing performance throughout your session.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "AI Sailing Coach uses your location to calculate boat speed and course over ground for accurate performance metrics.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AI Sailing Coach needs microphone access to listen to your voice commands and provide real-time coaching advice during sailing.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "AI Sailing Coach uses speech recognition to understand your questions and provide voice-activated sailing coaching.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spatialsail.AISailingCoach;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		II0004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AISailingCoach/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AISailingCoach/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Sailing Coach";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "AI Sailing Coach connects to Bluetooth wind sensors and marine instruments for accurate wind data.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "AI Sailing Coach connects to Bluetooth wind sensors and marine instruments for accurate wind data.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "AI Sailing Coach connects to Signal K servers on your local network for real-time boat data.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "AI Sailing Coach needs continuous location access to track your sailing performance throughout your session.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "AI Sailing Coach uses your location to calculate boat speed and course over ground for accurate performance metrics.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AI Sailing Coach needs microphone access to listen to your voice commands and provide real-time coaching advice during sailing.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "AI Sailing Coach uses speech recognition to understand your questions and provide voice-activated sailing coaching.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spatialsail.AISailingCoach;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		GG0001 /* Build configuration list for PBXNativeTarget "AISailingCoach" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				II0003 /* Debug */,
+				II0004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		GG0002 /* Build configuration list for PBXProject "AISailingCoach" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				II0001 /* Debug */,
+				II0002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = HH0001 /* Project object */;
+}
