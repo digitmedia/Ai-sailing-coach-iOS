@@ -24,7 +24,15 @@ class GeminiCoachService: ObservableObject {
     private var apiKey: String?
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession?
-    private var speechService: SpeechService?
+
+    // Lazy-loaded speech service to avoid audio init issues on simulator
+    private var _speechService: SpeechService?
+    private var speechService: SpeechService {
+        if _speechService == nil {
+            _speechService = SpeechService()
+        }
+        return _speechService!
+    }
 
     // Gemini Live API endpoint
     private let baseURL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
@@ -50,7 +58,7 @@ class GeminiCoachService: ObservableObject {
     // MARK: - Initialization
 
     init() {
-        speechService = SpeechService()
+        // Don't initialize speech service here - it's lazy loaded
         loadStoredAPIKey()
     }
 
@@ -85,7 +93,7 @@ class GeminiCoachService: ObservableObject {
         }
 
         connectionState = .listening
-        speechService?.startListening { [weak self] transcription in
+        speechService.startListening { [weak self] transcription in
             guard let self = self, let text = transcription else { return }
             Task {
                 await self.sendQuery(text, context: context)
@@ -94,7 +102,7 @@ class GeminiCoachService: ObservableObject {
     }
 
     func stopListening() {
-        speechService?.stopListening()
+        _speechService?.stopListening()
         if connectionState == .listening {
             connectionState = .idle
         }
@@ -123,7 +131,7 @@ class GeminiCoachService: ObservableObject {
             currentResponse = response
 
             connectionState = .speaking
-            await speechService?.speak(response)
+            await speechService.speak(response)
             connectionState = .idle
 
         } catch {
@@ -294,7 +302,7 @@ class GeminiCoachService: ObservableObject {
         guard let audioData = Data(base64Encoded: base64Audio) else { return }
         // Play audio through AVAudioPlayer
         Task { @MainActor in
-            speechService?.playAudioData(audioData)
+            speechService.playAudioData(audioData)
         }
     }
 

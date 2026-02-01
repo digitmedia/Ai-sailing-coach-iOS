@@ -17,6 +17,7 @@ class SpeechService: NSObject, ObservableObject {
     @Published var isListening = false
     @Published var transcribedText = ""
     @Published var isSpeaking = false
+    @Published var isAvailable = false
 
     // MARK: - Private Properties
 
@@ -24,7 +25,8 @@ class SpeechService: NSObject, ObservableObject {
     private let speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine: AVAudioEngine?
+    private var hasTap = false
 
     // Text-to-Speech
     private let synthesizer = AVSpeechSynthesizer()
@@ -34,6 +36,16 @@ class SpeechService: NSObject, ObservableObject {
 
     // Callback for transcription results
     private var onTranscription: ((String?) -> Void)?
+    private var speakContinuation: CheckedContinuation<Void, Never>?
+
+    // Check if running in simulator
+    private var isSimulator: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }
 
     // MARK: - Initialization
 
@@ -41,33 +53,49 @@ class SpeechService: NSObject, ObservableObject {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         super.init()
         synthesizer.delegate = self
-        requestPermissions()
+
+        // Don't auto-request permissions - let UI trigger this
+        checkAvailability()
+    }
+
+    // MARK: - Availability Check
+
+    private func checkAvailability() {
+        // Speech recognition may not work well on simulator
+        if isSimulator {
+            print("⚠️ Running on simulator - speech features may be limited")
+            isAvailable = false
+            return
+        }
+
+        isAvailable = speechRecognizer?.isAvailable ?? false
     }
 
     // MARK: - Permissions
 
-    private func requestPermissions() {
+    func requestPermissions(completion: @escaping (Bool) -> Void) {
+        var speechAuthorized = false
+        var micAuthorized = false
+
+        let group = DispatchGroup()
+
+        group.enter()
         SFSpeechRecognizer.requestAuthorization { status in
-            DispatchQueue.main.async {
-                switch status {
-                case .authorized:
-                    print("Speech recognition authorized")
-                case .denied, .restricted, .notDetermined:
-                    print("Speech recognition not available")
-                @unknown default:
-                    break
-                }
-            }
+            speechAuthorized = (status == .authorized)
+            print("Speech recognition: \(status == .authorized ? "authorized" : "denied")")
+            group.leave()
         }
 
+        group.enter()
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                if granted {
-                    print("Microphone access granted")
-                } else {
-                    print("Microphone access denied")
-                }
-            }
+            micAuthorized = granted
+            print("Microphone: \(granted ? "granted" : "denied")")
+            group.leave()
+        }
+
+        group.notify(queue: .main) {
+            self.isAvailable = speechAuthorized && micAuthorized && !self.isSimulator
+            completion(self.isAvailable)
         }
     }
 
@@ -76,22 +104,45 @@ class SpeechService: NSObject, ObservableObject {
     func startListening(onTranscription: @escaping (String?) -> Void) {
         self.onTranscription = onTranscription
 
+        // Check if available
+        guard !isSimulator else {
+            print("⚠️ Speech recognition not available on simulator")
+            // Simulate a response for testing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                onTranscription("How can I improve my VMG?")
+            }
+            return
+        }
+
         // Stop any existing recognition
         stopListening()
 
         // Configure audio session
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            print("Audio session error: \(error)")
+            print("❌ Audio session error: \(error.localizedDescription)")
+            onTranscription(nil)
+            return
+        }
+
+        // Create fresh audio engine
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else {
+            print("❌ Failed to create audio engine")
+            onTranscription(nil)
             return
         }
 
         // Create recognition request
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else { return }
+        guard let recognitionRequest = recognitionRequest else {
+            print("❌ Failed to create recognition request")
+            onTranscription(nil)
+            return
+        }
 
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = false
@@ -100,24 +151,21 @@ class SpeechService: NSObject, ObservableObject {
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             guard let self = self else { return }
 
+            var isFinal = false
+
             if let result = result {
                 let transcription = result.bestTranscription.formattedString
                 DispatchQueue.main.async {
                     self.transcribedText = transcription
                 }
-
-                // If final result, call callback
-                if result.isFinal {
-                    DispatchQueue.main.async {
-                        self.onTranscription?(transcription)
-                        self.stopListening()
-                    }
-                }
+                isFinal = result.isFinal
             }
 
-            if let error = error {
-                print("Recognition error: \(error)")
+            if error != nil || isFinal {
                 DispatchQueue.main.async {
+                    if isFinal, let text = result?.bestTranscription.formattedString {
+                        self.onTranscription?(text)
+                    }
                     self.stopListening()
                 }
             }
@@ -126,16 +174,18 @@ class SpeechService: NSObject, ObservableObject {
         // Configure audio input
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
-        // Validate the format before installing tap
+
+        // Check for valid format
         guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
-            print("Invalid audio format: sampleRate=\(recordingFormat.sampleRate), channels=\(recordingFormat.channelCount)")
+            print("❌ Invalid audio format - sampleRate: \(recordingFormat.sampleRate), channels: \(recordingFormat.channelCount)")
+            onTranscription(nil)
             return
         }
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
         }
+        hasTap = true
 
         // Start audio engine
         audioEngine.prepare()
@@ -145,21 +195,15 @@ class SpeechService: NSObject, ObservableObject {
                 self.isListening = true
             }
         } catch {
-            print("Audio engine error: \(error)")
+            print("❌ Audio engine start error: \(error.localizedDescription)")
+            cleanupAudio()
+            onTranscription(nil)
         }
     }
 
     func stopListening() {
-        // Stop audio engine first
-        if audioEngine.isRunning {
-            audioEngine.stop()
-        }
-        
-        // Only remove tap if engine was running
-        if audioEngine.inputNode.numberOfInputs > 0 {
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        
+        cleanupAudio()
+
         recognitionRequest?.endAudio()
         recognitionRequest = nil
         recognitionTask?.cancel()
@@ -168,6 +212,19 @@ class SpeechService: NSObject, ObservableObject {
         DispatchQueue.main.async {
             self.isListening = false
         }
+    }
+
+    private func cleanupAudio() {
+        if let engine = audioEngine {
+            if engine.isRunning {
+                engine.stop()
+            }
+            if hasTap {
+                engine.inputNode.removeTap(onBus: 0)
+                hasTap = false
+            }
+        }
+        audioEngine = nil
     }
 
     // MARK: - Text-to-Speech
@@ -185,7 +242,7 @@ class SpeechService: NSObject, ObservableObject {
                 // Create utterance
                 let utterance = AVSpeechUtterance(string: text)
                 utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.1 // Slightly faster
+                utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.1
                 utterance.pitchMultiplier = 1.0
                 utterance.volume = 1.0
 
@@ -197,18 +254,14 @@ class SpeechService: NSObject, ObservableObject {
         }
     }
 
-    private var speakContinuation: CheckedContinuation<Void, Never>?
-
-    // MARK: - Audio Playback (for Gemini Live API audio)
+    // MARK: - Audio Playback
 
     func playAudioData(_ data: Data) {
         do {
-            // Configure audio session
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playback, mode: .default, options: [])
             try audioSession.setActive(true)
 
-            // Create and play audio
             audioPlayer = try AVAudioPlayer(data: data)
             audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()
@@ -218,7 +271,7 @@ class SpeechService: NSObject, ObservableObject {
                 self.isSpeaking = true
             }
         } catch {
-            print("Audio playback error: \(error)")
+            print("❌ Audio playback error: \(error.localizedDescription)")
         }
     }
 }
@@ -250,23 +303,5 @@ extension SpeechService: AVAudioPlayerDelegate {
         DispatchQueue.main.async {
             self.isSpeaking = false
         }
-    }
-}
-
-// MARK: - Audio Level Monitoring
-
-extension SpeechService {
-    /// Get current audio input level (for UI visualization)
-    func getInputLevel() -> Float {
-        guard audioEngine.isRunning else { return 0 }
-
-        let inputNode = audioEngine.inputNode
-        guard inputNode.outputFormat(forBus: 0).streamDescription.pointee.mChannelsPerFrame > 0 else {
-            return 0
-        }
-
-        // This is a simplified level detection
-        // For production, use a proper audio level meter
-        return 0.5 // Placeholder
     }
 }
