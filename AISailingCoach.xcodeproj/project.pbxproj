@@ -7,49 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		/* App */
-		AA0001 /* AISailingCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001; };
-
-		/* Models */
-		AA0002 /* SailingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002; };
-		AA0003 /* SignalKMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003; };
-
-		/* Views */
-		AA0004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0004; };
-		AA0005 /* CompassRoseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0005; };
-		AA0006 /* DataBoxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0006; };
-		AA0007 /* PerformanceGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0007; };
-		AA0008 /* CoachButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0008; };
-		AA0009 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0009; };
-		AA0010 /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0010; };
-
-		/* ViewModels */
-		AA0011 /* SailingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0011; };
-
-		/* Services */
-		AA0012 /* SignalKSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0012; };
-		AA0013 /* GeminiCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0013; };
-		AA0014 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014; };
-
-		/* Configuration */
-		AA0015 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015; };
-
-		/* Resources */
-		AA0016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0016; };
+		AA0001 /* AISailingCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001 /* AISailingCoachApp.swift */; };
+		AA0002 /* SailingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002 /* SailingData.swift */; };
+		AA0003 /* SignalKMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003 /* SignalKMessage.swift */; };
+		AA0004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0004 /* ContentView.swift */; };
+		AA0005 /* CompassRoseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0005 /* CompassRoseView.swift */; };
+		AA0006 /* DataBoxesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0006 /* DataBoxesView.swift */; };
+		AA0007 /* PerformanceGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0007 /* PerformanceGaugeView.swift */; };
+		AA0008 /* CoachButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0008 /* CoachButtonView.swift */; };
+		AA0009 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0009 /* SettingsView.swift */; };
+		AA0010 /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0010 /* ColorExtensions.swift */; };
+		AA0011 /* SailingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0011 /* SailingViewModel.swift */; };
+		AA0012 /* SignalKSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0012 /* SignalKSimulator.swift */; };
+		AA0013 /* GeminiCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0013 /* GeminiCoachService.swift */; };
+		AA0014 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014 /* SpeechService.swift */; };
+		AA0015 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015 /* Secrets.swift */; };
+		AA0017 /* GeminiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* GeminiLiveClient.swift */; };
+		AA0016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0016 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		/* Product */
-		CC0001 /* AISailingCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AISailingCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
-
-		/* App */
 		BB0001 /* AISailingCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISailingCoachApp.swift; sourceTree = "<group>"; };
-
-		/* Models */
 		BB0002 /* SailingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SailingData.swift; sourceTree = "<group>"; };
 		BB0003 /* SignalKMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalKMessage.swift; sourceTree = "<group>"; };
-
-		/* Views */
 		BB0004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB0005 /* CompassRoseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassRoseView.swift; sourceTree = "<group>"; };
 		BB0006 /* DataBoxesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBoxesView.swift; sourceTree = "<group>"; };
@@ -57,21 +37,15 @@
 		BB0008 /* CoachButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachButtonView.swift; sourceTree = "<group>"; };
 		BB0009 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BB0010 /* ColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensions.swift; sourceTree = "<group>"; };
-
-		/* ViewModels */
 		BB0011 /* SailingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SailingViewModel.swift; sourceTree = "<group>"; };
-
-		/* Services */
 		BB0012 /* SignalKSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalKSimulator.swift; sourceTree = "<group>"; };
 		BB0013 /* GeminiCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiCoachService.swift; sourceTree = "<group>"; };
 		BB0014 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
-
-		/* Configuration */
 		BB0015 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
-		BB0017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-
-		/* Resources */
 		BB0016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BB0017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB0018 /* GeminiLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiLiveClient.swift; sourceTree = "<group>"; };
+		CC0001 /* AISailingCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AISailingCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,7 +59,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		/* Root */
 		EE0001 = {
 			isa = PBXGroup;
 			children = (
@@ -94,18 +67,6 @@
 			);
 			sourceTree = "<group>";
 		};
-
-		/* Products */
-		EE0003 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				CC0001 /* AISailingCoach.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-
-		/* AISailingCoach */
 		EE0002 /* AISailingCoach */ = {
 			isa = PBXGroup;
 			children = (
@@ -121,8 +82,14 @@
 			path = AISailingCoach;
 			sourceTree = "<group>";
 		};
-
-		/* App */
+		EE0003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CC0001 /* AISailingCoach.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		EE0004 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -131,8 +98,6 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-
-		/* Models */
 		EE0005 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -142,8 +107,6 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-
-		/* Views */
 		EE0006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -156,8 +119,33 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-
-		/* Instruments */
+		EE0007 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BB0011 /* SailingViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		EE0008 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BB0012 /* SignalKSimulator.swift */,
+				BB0013 /* GeminiCoachService.swift */,
+				BB0018 /* GeminiLiveClient.swift */,
+				BB0014 /* SpeechService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		EE0009 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				BB0015 /* Secrets.swift */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
 		EE0010 /* Instruments */ = {
 			isa = PBXGroup;
 			children = (
@@ -168,8 +156,6 @@
 			path = Instruments;
 			sourceTree = "<group>";
 		};
-
-		/* Coach */
 		EE0011 /* Coach */ = {
 			isa = PBXGroup;
 			children = (
@@ -178,8 +164,6 @@
 			path = Coach;
 			sourceTree = "<group>";
 		};
-
-		/* Settings */
 		EE0012 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -188,46 +172,12 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
-
-		/* Components */
 		EE0013 /* Components */ = {
 			isa = PBXGroup;
 			children = (
 				BB0010 /* ColorExtensions.swift */,
 			);
 			path = Components;
-			sourceTree = "<group>";
-		};
-
-		/* ViewModels */
-		EE0007 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				BB0011 /* SailingViewModel.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-
-		/* Services */
-		EE0008 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				BB0012 /* SignalKSimulator.swift */,
-				BB0013 /* GeminiCoachService.swift */,
-				BB0014 /* SpeechService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-
-		/* Configuration */
-		EE0009 /* Configuration */ = {
-			isa = PBXGroup;
-			children = (
-				BB0015 /* Secrets.swift */,
-			);
-			path = Configuration;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -258,7 +208,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					FF0001 = {
 						CreatedOnToolsVersion = 15.0;
@@ -314,6 +264,7 @@
 				AA0013 /* GeminiCoachService.swift in Sources */,
 				AA0014 /* SpeechService.swift in Sources */,
 				AA0015 /* Secrets.swift in Sources */,
+				AA0017 /* GeminiLiveClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,6 +306,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = XCYFHUJLF6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -378,6 +330,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -418,6 +371,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = XCYFHUJLF6;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -434,6 +388,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};

@@ -101,13 +101,20 @@ class SpeechService: NSObject, ObservableObject {
 
     // MARK: - Speech Recognition
 
+    private var hasSimulatedOnce = false
+
     func startListening(onTranscription: @escaping (String?) -> Void) {
         self.onTranscription = onTranscription
 
         // Check if available
         guard !isSimulator else {
             print("⚠️ Speech recognition not available on simulator")
-            // Simulate a response for testing
+            // Simulate a response for testing (only once per session)
+            guard !hasSimulatedOnce else {
+                print("Already simulated once, waiting for real input")
+                return
+            }
+            hasSimulatedOnce = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 onTranscription("How can I improve my VMG?")
             }
@@ -208,6 +215,7 @@ class SpeechService: NSObject, ObservableObject {
         recognitionRequest = nil
         recognitionTask?.cancel()
         recognitionTask = nil
+        hasSimulatedOnce = false  // Reset for next session
 
         DispatchQueue.main.async {
             self.isListening = false
@@ -256,12 +264,75 @@ class SpeechService: NSObject, ObservableObject {
 
     // MARK: - Audio Playback
 
+    private var audioPlayerNode: AVAudioPlayerNode?
+    private var playbackEngine: AVAudioEngine?
+
     func playAudioData(_ data: Data) {
+        // Gemini Live returns raw PCM audio at 24kHz, 16-bit, mono
+        playPCMAudio(data, sampleRate: 24000)
+    }
+
+    private func playPCMAudio(_ data: Data, sampleRate: Double) {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playback, mode: .default, options: [])
             try audioSession.setActive(true)
 
+            // Create audio format for PCM 16-bit mono
+            guard let format = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                              sampleRate: sampleRate,
+                                              channels: 1,
+                                              interleaved: true) else {
+                print("❌ Failed to create audio format")
+                return
+            }
+
+            // Create buffer from data
+            let frameCount = UInt32(data.count / 2)  // 16-bit = 2 bytes per sample
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+                print("❌ Failed to create audio buffer")
+                return
+            }
+            buffer.frameLength = frameCount
+
+            // Copy data to buffer
+            data.withUnsafeBytes { rawBufferPointer in
+                if let int16Ptr = rawBufferPointer.baseAddress?.assumingMemoryBound(to: Int16.self) {
+                    buffer.int16ChannelData?[0].update(from: int16Ptr, count: Int(frameCount))
+                }
+            }
+
+            // Create playback engine
+            playbackEngine = AVAudioEngine()
+            audioPlayerNode = AVAudioPlayerNode()
+
+            guard let engine = playbackEngine, let player = audioPlayerNode else { return }
+
+            engine.attach(player)
+            engine.connect(player, to: engine.mainMixerNode, format: format)
+
+            try engine.start()
+
+            DispatchQueue.main.async {
+                self.isSpeaking = true
+            }
+
+            player.play()
+            player.scheduleBuffer(buffer) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.isSpeaking = false
+                    self?.playbackEngine?.stop()
+                }
+            }
+        } catch {
+            print("❌ PCM playback error: \(error.localizedDescription)")
+            // Fall back to standard audio player
+            playStandardAudio(data)
+        }
+    }
+
+    private func playStandardAudio(_ data: Data) {
+        do {
             audioPlayer = try AVAudioPlayer(data: data)
             audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()

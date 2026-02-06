@@ -2,8 +2,8 @@
 //  CoachButtonView.swift
 //  AISailingCoach
 //
-//  Push-to-talk button for AI sailing coach interaction
-//  Provides visual feedback during listening, processing, and speaking states
+//  Toggle button for AI sailing coach live session
+//  Tap once to start, tap again to stop
 //
 
 import SwiftUI
@@ -11,10 +11,8 @@ import SwiftUI
 struct CoachButtonView: View {
     let isActive: Bool
     let coachState: CoachState
-    let onPressStart: () -> Void
-    let onPressEnd: () -> Void
+    let onToggle: () -> Void
 
-    @State private var isPressing = false
     @State private var pulseAnimation = false
     @State private var waveAnimation = false
 
@@ -36,7 +34,7 @@ struct CoachButtonView: View {
     private var iconName: String {
         switch coachState {
         case .idle:
-            return "mic.fill"
+            return "sparkles"  // Gemini-style sparkle icon
         case .listening:
             return "waveform"
         case .processing:
@@ -82,15 +80,15 @@ struct CoachButtonView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                buttonColor.opacity(isPressing ? 0.9 : 0.8),
-                                buttonColor.opacity(isPressing ? 0.7 : 0.6)
+                                buttonColor.opacity(isActive ? 0.9 : 0.8),
+                                buttonColor.opacity(isActive ? 0.7 : 0.6)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
                     .frame(width: 70, height: 70)
-                    .shadow(color: buttonColor.opacity(0.5), radius: isPressing ? 5 : 10)
+                    .shadow(color: buttonColor.opacity(0.5), radius: isActive ? 15 : 10)
 
                 // Icon
                 Image(systemName: iconName)
@@ -99,22 +97,10 @@ struct CoachButtonView: View {
                     .symbolEffect(.bounce, value: coachState)
             }
             .frame(width: 100, height: 100)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !isPressing {
-                            isPressing = true
-                            onPressStart()
-                            startAnimations()
-                        }
-                    }
-                    .onEnded { _ in
-                        isPressing = false
-                        onPressEnd()
-                        stopAnimations()
-                    }
-            )
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: isPressing)
+            .onTapGesture {
+                onToggle()
+            }
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: isActive)
 
             // Status label
             Text(statusText)
@@ -240,8 +226,7 @@ struct CoachStatusIndicator: View {
         CoachButtonView(
             isActive: false,
             coachState: .idle,
-            onPressStart: {},
-            onPressEnd: {}
+            onToggle: {}
         )
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -253,8 +238,7 @@ struct CoachStatusIndicator: View {
         CoachButtonView(
             isActive: true,
             coachState: .listening,
-            onPressStart: {},
-            onPressEnd: {}
+            onToggle: {}
         )
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)

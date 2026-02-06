@@ -77,6 +77,15 @@ class SailingViewModel: ObservableObject {
                 self?.coachState = state
             }
             .store(in: &cancellables)
+
+        geminiCoachService?.$isConnected
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] connected in
+                if connected {
+                    self?.connectionStatus = .connected
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Simulator Control
@@ -100,21 +109,29 @@ class SailingViewModel: ObservableObject {
 
     // MARK: - AI Coach Control
 
-    func startPushToTalk() {
-        isPushToTalkActive = true
-        coachState = .listening
-        geminiCoachService?.startListening(context: buildCoachContext())
-    }
+    func toggleLiveSession() {
+        print("🔄 Toggle called. Currently active: \(isPushToTalkActive), state: \(coachState)")
 
-    func stopPushToTalk() {
-        isPushToTalkActive = false
-        geminiCoachService?.stopListening()
+        if isPushToTalkActive || coachState != .idle {
+            // Stop the session
+            print("⏹️ Stopping session")
+            isPushToTalkActive = false
+            coachState = .idle
+            geminiCoachService?.endLiveSession()
+        } else {
+            // Start the session
+            print("▶️ Starting session")
+            isPushToTalkActive = true
+            let context = buildCoachContext()
+            Task {
+                await geminiCoachService?.startLiveSession(context: context)
+            }
+        }
     }
 
     func sendCoachQuery(_ query: String) {
-        let context = buildCoachContext()
         Task {
-            await geminiCoachService?.sendQuery(query, context: context)
+            await geminiCoachService?.sendTextMessage(query)
         }
     }
 
@@ -148,10 +165,10 @@ enum ConnectionStatus: String {
 }
 
 enum CoachState: String {
-    case idle = "Ready"
+    case idle = "Ask Coach"
     case listening = "Listening..."
-    case processing = "Processing..."
-    case speaking = "Coach speaking..."
+    case processing = "Thinking..."
+    case speaking = "Speaking..."
     case error = "Error"
 }
 

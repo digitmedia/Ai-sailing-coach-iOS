@@ -3,7 +3,7 @@
 //  AISailingCoach
 //
 //  Integration with Google Gemini Live API for real-time AI sailing coaching
-//  Provides voice-based coaching during sailing with context-aware responses
+//  Uses WebSocket connection for bidirectional audio/text streaming
 //
 
 import Foundation
@@ -18,14 +18,17 @@ class GeminiCoachService: ObservableObject {
     @Published var currentResponse: String = ""
     @Published var connectionState: CoachState = .idle
     @Published var isConfigured: Bool = false
+    @Published var isConnected: Bool = false
 
     // MARK: - Private Properties
 
     private var apiKey: String?
-    private var webSocketTask: URLSessionWebSocketTask?
-    private var session: URLSession?
+    private var geminiLiveClient: GeminiLiveClient?
+    private var currentContext: CoachContext?
+    private var isSessionActive = false
+    private var cancellables = Set<AnyCancellable>()
 
-    // Lazy-loaded speech service to avoid audio init issues on simulator
+    // Lazy-loaded speech service (for REST API fallback only)
     private var _speechService: SpeechService?
     private var speechService: SpeechService {
         if _speechService == nil {
@@ -33,9 +36,6 @@ class GeminiCoachService: ObservableObject {
         }
         return _speechService!
     }
-
-    // Gemini Live API endpoint
-    private let baseURL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
 
     // System prompt for sailing coach persona
     private let systemPrompt = """
@@ -58,7 +58,6 @@ class GeminiCoachService: ObservableObject {
     // MARK: - Initialization
 
     init() {
-        // Don't initialize speech service here - it's lazy loaded
         loadStoredAPIKey()
     }
 
@@ -71,7 +70,6 @@ class GeminiCoachService: ObservableObject {
     }
 
     private func loadStoredAPIKey() {
-        // Load from UserDefaults (in production, use Keychain)
         if let key = UserDefaults.standard.string(forKey: "GeminiAPIKey"), !key.isEmpty {
             self.apiKey = key
             isConfigured = true
@@ -79,47 +77,151 @@ class GeminiCoachService: ObservableObject {
     }
 
     private func storeAPIKey(_ key: String) {
-        // Store in UserDefaults (in production, use Keychain)
         UserDefaults.standard.set(key, forKey: "GeminiAPIKey")
     }
 
-    // MARK: - Voice Interaction
+    // MARK: - Live Session Management
 
-    func startListening(context: CoachContext) {
-        guard isConfigured else {
+    func startLiveSession(context: CoachContext) async {
+        guard isConfigured, let apiKey = apiKey, !apiKey.isEmpty else {
             connectionState = .error
             currentResponse = "Please configure your Gemini API key in Settings"
             return
         }
 
+        print("🎙️ Starting live session with Gemini Live API")
+        isSessionActive = true
+        currentContext = context
+        connectionState = .processing
+        currentResponse = "Connecting to AI Coach..."
+
+        // Create the Gemini Live client
+        geminiLiveClient = GeminiLiveClient(apiKey: apiKey)
+
+        // Setup callbacks
+        geminiLiveClient?.onConnectionStateChanged = { [weak self] connected in
+            DispatchQueue.main.async {
+                self?.isConnected = connected
+                if connected {
+                    self?.connectionState = .listening
+                    self?.currentResponse = "Connected! Speak your question..."
+
+                    // Send initial sailing context
+                    let contextMessage = context.description
+                    self?.geminiLiveClient?.sendTextMessage(contextMessage)
+                } else if self?.isSessionActive == true {
+                    self?.connectionState = .error
+                    self?.currentResponse = "Connection lost"
+                }
+            }
+        }
+
+        geminiLiveClient?.onTranscript = { [weak self] text in
+            DispatchQueue.main.async {
+                self?.currentResponse = text
+                self?.connectionState = .speaking
+            }
+        }
+
+        geminiLiveClient?.onError = { [weak self] error in
+            print("❌ Gemini Live error: \(error)")
+            DispatchQueue.main.async {
+                guard self?.isSessionActive == true else { return }
+
+                // Fall back to REST API
+                self?.currentResponse = "Using voice mode..."
+                self?.startSpeechRecognition(context: context)
+            }
+        }
+
+        // Build system instruction with sailing coach persona
+        let fullSystemInstruction = """
+        \(systemPrompt)
+
+        Current sailing conditions:
+        \(context.description)
+        """
+
+        // Connect!
+        geminiLiveClient?.connect(systemInstruction: fullSystemInstruction)
+    }
+
+    private func startSpeechRecognition(context: CoachContext) {
+        guard isSessionActive else { return }
+
         connectionState = .listening
-        speechService.startListening { [weak self] transcription in
-            guard let self = self, let text = transcription else { return }
-            Task {
-                await self.sendQuery(text, context: context)
+        currentResponse = "Listening... Ask me anything!"
+
+        speechService.startListening { [weak self] transcribedText in
+            guard let self = self else { return }
+
+            Task { @MainActor in
+                // Double-check session is still active
+                guard self.isSessionActive else {
+                    print("Session ended, ignoring transcription")
+                    return
+                }
+
+                if let text = transcribedText, !text.isEmpty {
+                    self.currentResponse = "You asked: \"\(text)\""
+                    await self.sendQueryREST(text, context: context)
+                }
+                // Note: Don't auto-restart listening - user needs to tap again for next question
             }
         }
     }
 
-    func stopListening() {
-        _speechService?.stopListening()
-        if connectionState == .listening {
-            connectionState = .idle
+    func endLiveSession() {
+        guard isSessionActive else {
+            print("⚠️ Session already ended")
+            return
+        }
+
+        print("🛑 Ending live session")
+        isSessionActive = false
+
+        // Disconnect Gemini Live client
+        geminiLiveClient?.disconnect()
+        geminiLiveClient = nil
+
+        // Stop fallback speech service if running
+        speechService.stopListening()
+
+        // Reset state
+        connectionState = .idle
+        currentResponse = ""
+        isConnected = false
+    }
+
+    // MARK: - Send Text Message (for context updates)
+
+    func sendTextMessage(_ text: String) async {
+        // Send via Gemini Live client if connected
+        if isConnected, let client = geminiLiveClient {
+            client.sendTextMessage(text)
+            return
+        }
+
+        // Fall back to REST API if not connected
+        if let context = currentContext {
+            await sendQueryREST(text, context: context)
         }
     }
 
-    // MARK: - Query Handling
+    // MARK: - Fallback REST API (for error recovery)
 
-    func sendQuery(_ query: String, context: CoachContext) async {
+    private func sendQueryREST(_ query: String, context: CoachContext) async {
         guard let apiKey = apiKey else {
             connectionState = .error
             currentResponse = "API key not configured"
             return
         }
 
-        connectionState = .processing
+        guard isSessionActive else { return }
 
-        // Build the prompt with context
+        connectionState = .processing
+        currentResponse = "Thinking..."
+
         let fullPrompt = """
         \(context.description)
 
@@ -127,12 +229,21 @@ class GeminiCoachService: ObservableObject {
         """
 
         do {
-            let response = try await sendToGemini(prompt: fullPrompt, apiKey: apiKey)
-            currentResponse = response
+            // Get text response from Gemini
+            let text = try await callGeminiREST(prompt: fullPrompt, apiKey: apiKey)
 
+            guard isSessionActive else { return }
+
+            currentResponse = text
             connectionState = .speaking
-            await speechService.speak(response)
-            connectionState = .idle
+
+            // Use iOS TTS for simulator fallback
+            // Native audio is only available via WebSocket on real device
+            await speechService.speak(text)
+
+            guard isSessionActive else { return }
+            connectionState = .listening
+            currentResponse = "Tap ✨ to ask another question"
 
         } catch {
             connectionState = .error
@@ -140,10 +251,7 @@ class GeminiCoachService: ObservableObject {
         }
     }
 
-    // MARK: - Gemini API Communication
-
-    private func sendToGemini(prompt: String, apiKey: String) async throws -> String {
-        // Using REST API for simplicity (Live API would use WebSocket)
+    private func callGeminiREST(prompt: String, apiKey: String) async throws -> String {
         let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\(apiKey)")!
 
         var request = URLRequest(url: url)
@@ -161,14 +269,7 @@ class GeminiCoachService: ObservableObject {
             ],
             "generationConfig": [
                 "temperature": 0.7,
-                "maxOutputTokens": 150,
-                "topP": 0.9
-            ],
-            "safetySettings": [
-                ["category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"],
-                ["category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"],
-                ["category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"],
-                ["category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"]
+                "maxOutputTokens": 150
             ]
         ]
 
@@ -176,16 +277,10 @@ class GeminiCoachService: ObservableObject {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse else {
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw GeminiError.invalidResponse
         }
 
-        guard httpResponse.statusCode == 200 else {
-            let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw GeminiError.apiError(statusCode: httpResponse.statusCode, message: errorBody)
-        }
-
-        // Parse response
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         guard let candidates = json?["candidates"] as? [[String: Any]],
               let firstCandidate = candidates.first,
@@ -198,119 +293,6 @@ class GeminiCoachService: ObservableObject {
 
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
-
-    // MARK: - Gemini Live API (WebSocket) - For future real-time audio
-
-    func connectLive(context: CoachContext) async throws {
-        guard let apiKey = apiKey else {
-            throw GeminiError.notConfigured
-        }
-
-        let urlString = "\(baseURL)?key=\(apiKey)"
-        guard let url = URL(string: urlString) else {
-            throw GeminiError.invalidURL
-        }
-
-        session = URLSession(configuration: .default)
-        webSocketTask = session?.webSocketTask(with: url)
-        webSocketTask?.resume()
-
-        // Send setup message
-        let setupMessage: [String: Any] = [
-            "setup": [
-                "model": "models/gemini-2.0-flash-exp",
-                "generationConfig": [
-                    "responseModalities": ["AUDIO"],
-                    "speechConfig": [
-                        "voiceConfig": [
-                            "prebuiltVoiceConfig": [
-                                "voiceName": "Kore"
-                            ]
-                        ]
-                    ]
-                ],
-                "systemInstruction": [
-                    "parts": [
-                        ["text": systemPrompt]
-                    ]
-                ]
-            ]
-        ]
-
-        let setupData = try JSONSerialization.data(withJSONObject: setupMessage)
-        try await webSocketTask?.send(.data(setupData))
-
-        connectionState = .listening
-        receiveMessages()
-    }
-
-    private func receiveMessages() {
-        webSocketTask?.receive { [weak self] result in
-            switch result {
-            case .success(let message):
-                self?.handleWebSocketMessage(message)
-                self?.receiveMessages() // Continue receiving
-            case .failure(let error):
-                print("WebSocket error: \(error)")
-                Task { @MainActor in
-                    self?.connectionState = .error
-                }
-            }
-        }
-    }
-
-    private func handleWebSocketMessage(_ message: URLSessionWebSocketTask.Message) {
-        switch message {
-        case .data(let data):
-            parseGeminiResponse(data)
-        case .string(let text):
-            if let data = text.data(using: .utf8) {
-                parseGeminiResponse(data)
-            }
-        @unknown default:
-            break
-        }
-    }
-
-    private func parseGeminiResponse(_ data: Data) {
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return
-        }
-
-        // Handle different response types
-        if let serverContent = json["serverContent"] as? [String: Any],
-           let modelTurn = serverContent["modelTurn"] as? [String: Any],
-           let parts = modelTurn["parts"] as? [[String: Any]] {
-
-            for part in parts {
-                if let text = part["text"] as? String {
-                    Task { @MainActor in
-                        self.currentResponse = text
-                    }
-                }
-                // Handle audio data if present
-                if let inlineData = part["inlineData"] as? [String: Any],
-                   let audioData = inlineData["data"] as? String {
-                    // Decode and play audio
-                    handleAudioResponse(base64Audio: audioData)
-                }
-            }
-        }
-    }
-
-    private func handleAudioResponse(base64Audio: String) {
-        guard let audioData = Data(base64Encoded: base64Audio) else { return }
-        // Play audio through AVAudioPlayer
-        Task { @MainActor in
-            speechService.playAudioData(audioData)
-        }
-    }
-
-    func disconnect() {
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
-        webSocketTask = nil
-        connectionState = .idle
-    }
 }
 
 // MARK: - Error Types
@@ -321,6 +303,7 @@ enum GeminiError: LocalizedError {
     case invalidResponse
     case apiError(statusCode: Int, message: String)
     case parseError
+    case connectionFailed
 
     var errorDescription: String? {
         switch self {
@@ -334,6 +317,8 @@ enum GeminiError: LocalizedError {
             return "API Error (\(code)): \(message)"
         case .parseError:
             return "Failed to parse API response"
+        case .connectionFailed:
+            return "Failed to connect to Gemini Live"
         }
     }
 }

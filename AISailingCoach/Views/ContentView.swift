@@ -33,12 +33,11 @@ struct ContentView: View {
                     Spacer()
                         .frame(minHeight: 20, maxHeight: 40)
 
-                    // AI Coach Button
+                    // AI Coach Button - tap to start/stop live session
                     CoachButtonView(
                         isActive: viewModel.isPushToTalkActive,
                         coachState: viewModel.coachState,
-                        onPressStart: { viewModel.startPushToTalk() },
-                        onPressEnd: { viewModel.stopPushToTalk() }
+                        onToggle: { viewModel.toggleLiveSession() }
                     )
                     .padding(.bottom, 24)
                 }
