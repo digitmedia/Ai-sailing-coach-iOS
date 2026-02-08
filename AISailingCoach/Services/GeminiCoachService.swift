@@ -83,6 +83,12 @@ class GeminiCoachService: ObservableObject {
     // MARK: - Live Session Management
 
     func startLiveSession(context: CoachContext) async {
+        // Prevent duplicate connections
+        guard !isSessionActive else {
+            print("⚠️ Session already active, ignoring start request")
+            return
+        }
+
         guard isConfigured, let apiKey = apiKey, !apiKey.isEmpty else {
             connectionState = .error
             currentResponse = "Please configure your Gemini API key in Settings"
@@ -90,6 +96,11 @@ class GeminiCoachService: ObservableObject {
         }
 
         print("🎙️ Starting live session with Gemini Live API")
+
+        // Clean up any existing client first
+        geminiLiveClient?.disconnect()
+        geminiLiveClient = nil
+
         isSessionActive = true
         currentContext = context
         connectionState = .processing
