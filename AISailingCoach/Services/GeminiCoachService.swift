@@ -30,7 +30,7 @@ class GeminiCoachService: ObservableObject {
 
     // Timer for periodic data updates
     private var dataUpdateTimer: Timer?
-    private let dataUpdateInterval: TimeInterval = 10.0  // Send data every 10 seconds
+    private let dataUpdateInterval: TimeInterval = 20.0  // Send data every 20 seconds
 
     // Callback to get fresh sailing data
     var getSailingData: (() -> CoachContext)?
