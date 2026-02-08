@@ -98,7 +98,7 @@ struct MiniPerformancePane: View {
                     Text("\(performance)%")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
-                        .offset(x: 12, y: 2)
+                        .offset(x: 12, y: 0)
                 }
             }
             .frame(height: 65)
