@@ -174,17 +174,13 @@ struct HeadsailPane: View {
                 .overlay(GenoaSailShape().stroke(Color.white, lineWidth: 2))
                 .frame(width: 40, height: 50)
         case .code0:
-            // Curved code 0 shape
-            Code0SailShape()
-                .fill(Color.white.opacity(0.2))
-                .overlay(Code0SailShape().stroke(Color.white, lineWidth: 2))
-                .frame(width: 35, height: 50)
+            // Code 0 sail with panel lines
+            Code0SailView()
+                .frame(width: 38, height: 50)
         case .gennaker:
-            // Rounded gennaker shape
-            GennakerSailShape()
-                .fill(Color.white.opacity(0.2))
-                .overlay(GennakerSailShape().stroke(Color.white, lineWidth: 2))
-                .frame(width: 40, height: 50)
+            // Gennaker sail with panel lines
+            GennakerSailView()
+                .frame(width: 42, height: 50)
         }
     }
 }
@@ -202,29 +198,144 @@ struct GenoaSailShape: Shape {
     }
 }
 
-struct Code0SailShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.move(to: CGPoint(x: rect.midX - 5, y: rect.minY))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.midX - 5, y: rect.maxY),
-                control: CGPoint(x: rect.maxX + 10, y: rect.midY)
+// MARK: - Code 0 Sail View (with panel lines)
+
+struct Code0SailView: View {
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+
+            // Sail outline path - asymmetric reaching sail
+            var outline = Path()
+            outline.move(to: CGPoint(x: w * 0.5, y: 0))  // Head (top)
+
+            // Curved luff (leading edge)
+            outline.addQuadCurve(
+                to: CGPoint(x: w * 0.15, y: h),  // Tack (bottom left)
+                control: CGPoint(x: w * 0.1, y: h * 0.5)
             )
-            path.addLine(to: CGPoint(x: rect.midX - 5, y: rect.minY))
+
+            // Foot (bottom edge)
+            outline.addLine(to: CGPoint(x: w * 0.5, y: h * 0.95))  // Clew area
+
+            // Curved leech (trailing edge)
+            outline.addQuadCurve(
+                to: CGPoint(x: w * 0.5, y: 0),  // Back to head
+                control: CGPoint(x: w * 0.95, y: h * 0.4)
+            )
+
+            // Draw filled outline
+            context.fill(outline, with: .color(.white.opacity(0.15)))
+            context.stroke(outline, with: .color(.white), lineWidth: 2)
+
+            // Draw radial panel lines from tack
+            let tackPoint = CGPoint(x: w * 0.15, y: h)
+            let numLines = 12
+
+            for i in 0..<numLines {
+                let t = Double(i) / Double(numLines - 1)
+                // Interpolate along the leech curve
+                let endX = w * 0.5 + (w * 0.45 - w * 0.5) * sin(t * .pi * 0.8)
+                let endY = t * h * 0.9
+
+                var line = Path()
+                line.move(to: tackPoint)
+                line.addLine(to: CGPoint(x: endX, y: endY))
+                context.stroke(line, with: .color(.white.opacity(0.6)), lineWidth: 1)
+            }
+
+            // Horizontal battens
+            for i in 1...4 {
+                let y = h * Double(i) / 5.0
+                var batten = Path()
+                batten.move(to: CGPoint(x: w * 0.2, y: y))
+                batten.addLine(to: CGPoint(x: w * 0.7, y: y * 0.9))
+                context.stroke(batten, with: .color(.white.opacity(0.4)), lineWidth: 1)
+            }
         }
     }
 }
 
-struct GennakerSailShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.minX, y: rect.maxY),
-                control: CGPoint(x: rect.maxX + 5, y: rect.midY - 10)
+// MARK: - Gennaker Sail View (with panel lines)
+
+struct GennakerSailView: View {
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+
+            // Sail outline path - full symmetric spinnaker shape
+            var outline = Path()
+            outline.move(to: CGPoint(x: w * 0.5, y: 0))  // Head (top center)
+
+            // Left side curve (luff)
+            outline.addQuadCurve(
+                to: CGPoint(x: w * 0.1, y: h * 0.85),  // Left clew
+                control: CGPoint(x: w * 0.05, y: h * 0.4)
             )
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-            path.closeSubpath()
+
+            // Bottom curve
+            outline.addQuadCurve(
+                to: CGPoint(x: w * 0.9, y: h * 0.85),  // Right clew
+                control: CGPoint(x: w * 0.5, y: h * 1.1)
+            )
+
+            // Right side curve (leech)
+            outline.addQuadCurve(
+                to: CGPoint(x: w * 0.5, y: 0),  // Back to head
+                control: CGPoint(x: w * 0.95, y: h * 0.4)
+            )
+
+            // Draw filled outline
+            context.fill(outline, with: .color(.white.opacity(0.15)))
+            context.stroke(outline, with: .color(.white), lineWidth: 2)
+
+            // Draw radial panel lines from head
+            let headPoint = CGPoint(x: w * 0.5, y: 0)
+            let numLines = 10
+
+            for i in 0..<numLines {
+                let t = Double(i) / Double(numLines - 1)
+                let angle = -0.4 * .pi + t * 0.8 * .pi  // Spread from left to right
+                let length = h * 0.8
+                let endX = headPoint.x + cos(angle + .pi / 2) * length * 0.8
+                let endY = headPoint.y + sin(angle + .pi / 2) * length
+
+                var line = Path()
+                line.move(to: headPoint)
+                line.addLine(to: CGPoint(x: endX, y: endY))
+                context.stroke(line, with: .color(.white.opacity(0.6)), lineWidth: 1)
+            }
+
+            // Draw radial lines from both clews
+            let leftClew = CGPoint(x: w * 0.1, y: h * 0.85)
+            let rightClew = CGPoint(x: w * 0.9, y: h * 0.85)
+
+            for i in 0..<5 {
+                let t = Double(i) / 4.0
+                // Lines from left clew
+                var leftLine = Path()
+                leftLine.move(to: leftClew)
+                leftLine.addLine(to: CGPoint(x: w * 0.3 + t * w * 0.2, y: h * 0.3 + t * h * 0.3))
+                context.stroke(leftLine, with: .color(.white.opacity(0.4)), lineWidth: 1)
+
+                // Lines from right clew
+                var rightLine = Path()
+                rightLine.move(to: rightClew)
+                rightLine.addLine(to: CGPoint(x: w * 0.7 - t * w * 0.2, y: h * 0.3 + t * h * 0.3))
+                context.stroke(rightLine, with: .color(.white.opacity(0.4)), lineWidth: 1)
+            }
+
+            // Horizontal seams
+            for i in 1...3 {
+                let y = h * Double(i) / 4.5
+                let xOffset = w * 0.15 * (1 - Double(i) / 4.0)
+                var seam = Path()
+                seam.move(to: CGPoint(x: xOffset + w * 0.1, y: y))
+                seam.addLine(to: CGPoint(x: w * 0.9 - xOffset, y: y))
+                context.stroke(seam, with: .color(.white.opacity(0.3)), lineWidth: 1)
+            }
         }
     }
 }
