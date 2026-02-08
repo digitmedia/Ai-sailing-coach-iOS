@@ -16,6 +16,7 @@ class Gemini3VisualCoachService: ObservableObject {
     // MARK: - Published Properties
 
     @Published var recommendations: CoachRecommendations?
+    /// Whether the visual coach service is currently running
     @Published var isActive: Bool = false
     @Published var lastError: String?
     @Published var isLoading: Bool = false

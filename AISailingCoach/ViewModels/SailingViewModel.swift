@@ -121,12 +121,8 @@ class SailingViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        visualCoachService?.$isActive
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] active in
-                self?.isVisualCoachActive = active
-            }
-            .store(in: &cancellables)
+        // Note: isVisualCoachActive is managed via UserDefaults, not synced from service
+        // This allows the setting to persist and show correctly on app launch
     }
 
     // MARK: - Simulator Control
@@ -136,8 +132,8 @@ class SailingViewModel: ObservableObject {
         isSimulatorRunning = true
         connectionStatus = .connected
 
-        // Auto-start visual coach when simulator starts
-        if !isVisualCoachActive {
+        // Auto-start visual coach when simulator starts (if enabled in settings)
+        if isVisualCoachActive {
             print("🎯 Auto-starting visual coach with simulator")
             visualCoachService?.start()
         }
@@ -201,10 +197,12 @@ class SailingViewModel: ObservableObject {
         if isVisualCoachActive {
             print("🛑 Stopping visual coach")
             visualCoachService?.stop()
+            isVisualCoachActive = false
             UserDefaults.standard.set(false, forKey: "VisualCoachEnabled")
         } else {
             print("▶️ Starting visual coach")
             visualCoachService?.start()
+            isVisualCoachActive = true
             UserDefaults.standard.set(true, forKey: "VisualCoachEnabled")
         }
     }
