@@ -93,28 +93,41 @@ extension CoachRecommendations {
         // Headsail based on TWA
         let headsail = HeadsailRecommendation.fromWindAngle(data.trueWindAngle)
 
-        // Steering based on performance
+        // Steering based on performance and point of sail
+        // More aggressive thresholds to match voice coach recommendations
         let steering: SteeringRecommendation
-        if data.performance >= 90 {
+        let absTWA = abs(data.trueWindAngle)
+
+        if data.performance >= 98 {
+            // Nearly perfect - hold course
             steering = .steady
-        } else if data.performance >= 75 {
-            // Slightly underperforming - bear away to build speed
-            steering = .bearAway
+        } else if data.performance >= 93 {
+            // Very good but could improve - slight adjustment upwind
+            if absTWA < 50 {
+                steering = .bearAway  // Bear away to build speed upwind
+            } else {
+                steering = .steady
+            }
         } else {
-            // Significantly underperforming - bear away more
+            // Below 93% - bear away to build speed
             steering = .bearAway
         }
 
-        // Trim based on speed vs target
+        // Trim based on performance
+        // More aggressive to match voice coach recommendations
         let trim: SailTrimRecommendation
-        if data.boatSpeed >= data.targetSpeed * 0.95 {
+        if data.performance >= 98 {
             trim = .hold
-        } else if data.boatSpeed < data.targetSpeed * 0.85 {
-            // Very slow - ease to reduce drag and build speed
-            trim = .ease
+        } else if data.performance >= 93 {
+            // Slightly below optimal
+            if absTWA < 50 {
+                trim = .sheetIn  // More power upwind
+            } else {
+                trim = .ease     // Ease for speed on other points
+            }
         } else {
-            // Moderately slow - sheet in for more power
-            trim = .sheetIn
+            // Below 93% - ease to build speed
+            trim = .ease
         }
 
         return CoachRecommendations(

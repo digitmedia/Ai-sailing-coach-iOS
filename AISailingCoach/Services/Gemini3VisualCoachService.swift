@@ -22,6 +22,7 @@ class Gemini3VisualCoachService: ObservableObject {
 
     // MARK: - Configuration
 
+    // Using Gemini 3 Flash preview
     private let model = "gemini-3-flash-preview"
     private let updateInterval: TimeInterval = 10.0  // Update every 10 seconds
     private var apiKey: String?
@@ -33,24 +34,10 @@ class Gemini3VisualCoachService: ObservableObject {
     // MARK: - System Prompt
 
     private let systemPrompt = """
-    You are an expert racing sailing coach analyzing real-time boat telemetry.
-    Based on the sailing data provided, give concise recommendations for:
-    1. Headsail selection (genoa for upwind TWA<50°, code0 for reaching 50-90°, gennaker for downwind >90°)
-    2. Steering action (steady if optimal, headUp to point higher, bearAway to gain speed)
-    3. Sail trim action (hold if optimal, sheetIn for more power, ease to reduce heel/drag)
-
-    Decision guidelines:
-    - Performance >= 90%: boat is doing well, recommend steady/hold unless angle needs adjustment
-    - Performance 75-90%: minor adjustments needed
-    - Performance < 75%: significant changes needed, usually bearAway + ease to build speed first
-
-    Respond ONLY with a valid JSON object, no markdown, no explanation:
-    {"recommendedHeadsail":"genoa","steeringRecommendation":"steady","sailTrimRecommendation":"hold"}
-
-    Valid values:
-    - recommendedHeadsail: "genoa", "code0", "gennaker"
-    - steeringRecommendation: "steady", "headUp", "bearAway"
-    - sailTrimRecommendation: "hold", "sheetIn", "ease"
+    You are a sailing coach. Analyze the boat data and recommend:
+    - recommendedHeadsail: "genoa" if TWA<50°, "code0" if TWA 50-90°, "gennaker" if TWA>90°
+    - steeringRecommendation: "steady" if performance>=95%, otherwise "bearAway" to build speed
+    - sailTrimRecommendation: "hold" if performance>=95%, "ease" if performance<90%, otherwise "sheetIn"
     """
 
     // MARK: - Initialization
@@ -127,47 +114,46 @@ class Gemini3VisualCoachService: ObservableObject {
         // Build the prompt with current sailing data
         let dataPrompt = buildDataPrompt(from: sailingData)
 
+        print("📊 Visual coach: speed=\(String(format: "%.1f", sailingData.boatSpeed))kts, perf=\(sailingData.performance)%, TWA=\(Int(sailingData.trueWindAngle))°")
+
+        // Try API call, but also calculate fallback
+        let fallback = CoachRecommendations.calculateFallback(from: sailingData)
+
         do {
             let response = try await callGemini3API(prompt: dataPrompt, apiKey: apiKey)
-            let newRecommendations = try parseRecommendations(from: response)
 
-            self.recommendations = newRecommendations
-            self.lastError = nil
-            print("✅ Visual coach recommendations updated: \(newRecommendations)")
-
+            // Check if response contains actual JSON
+            if response.contains("{") && response.contains("}") {
+                print("📥 API Response: \(response)")
+                let newRecommendations = try parseRecommendations(from: response)
+                self.recommendations = newRecommendations
+                self.lastError = nil
+                print("✅ API: headsail=\(newRecommendations.recommendedHeadsail.rawValue), steering=\(newRecommendations.steeringRecommendation.rawValue), trim=\(newRecommendations.sailTrimRecommendation.rawValue)")
+            } else {
+                // API returned but no JSON - use fallback
+                print("⚠️ API response incomplete: \(response.prefix(50))...")
+                self.recommendations = fallback
+                print("📍 Using fallback: headsail=\(fallback.recommendedHeadsail.rawValue), steering=\(fallback.steeringRecommendation.rawValue), trim=\(fallback.sailTrimRecommendation.rawValue)")
+            }
         } catch {
-            print("❌ Visual coach error: \(error.localizedDescription)")
+            print("❌ API error: \(error.localizedDescription)")
             self.lastError = error.localizedDescription
-
-            // Use fallback recommendations
-            let fallback = CoachRecommendations.calculateFallback(from: sailingData)
             self.recommendations = fallback
-            print("⚠️ Using fallback recommendations: \(fallback)")
+            print("📍 Using fallback: headsail=\(fallback.recommendedHeadsail.rawValue), steering=\(fallback.steeringRecommendation.rawValue), trim=\(fallback.sailTrimRecommendation.rawValue)")
         }
 
         isLoading = false
     }
 
     private func buildDataPrompt(from data: SailingData) -> String {
-        """
-        Current sailing telemetry:
-        - Boat speed: \(String(format: "%.1f", data.boatSpeed)) knots
-        - Target speed: \(String(format: "%.1f", data.targetSpeed)) knots
-        - Performance: \(data.performance)%
-        - True wind angle (TWA): \(Int(data.trueWindAngle))°
-        - True wind speed (TWS): \(String(format: "%.1f", data.trueWindSpeed)) knots
-        - Apparent wind angle (AWA): \(Int(data.apparentWindAngle))°
-        - Course over ground (COG): \(Int(data.courseOverGround))°
-        - Point of sail: \(data.pointOfSail.rawValue)
-
-        Provide your JSON recommendations:
-        """
+        // Match the few-shot format exactly
+        "Input: speed=\(String(format: "%.1f", data.boatSpeed))kts, perf=\(data.performance)%, TWA=\(Int(data.trueWindAngle))°\nOutput:"
     }
 
     // MARK: - Gemini 3 Flash API
 
     private func callGemini3API(prompt: String, apiKey: String) async throws -> String {
-        // Use generateContent endpoint with JSON response mode
+        // Use generateContent endpoint with JSON response mode and schema
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
 
         guard let url = URL(string: urlString) else {
@@ -179,29 +165,62 @@ class Gemini3VisualCoachService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 15 // 15 second timeout
 
-        // Request body with minimal thinking for lowest latency
+        // Build JSON Schema for structured output (per Gemini 3 docs)
+        // Using responseMimeType + responseSchema guarantees valid JSON output
+        let jsonSchema: [String: Any] = [
+            "type": "OBJECT",
+            "properties": [
+                "recommendedHeadsail": [
+                    "type": "STRING",
+                    "enum": ["genoa", "code0", "gennaker"]
+                ],
+                "steeringRecommendation": [
+                    "type": "STRING",
+                    "enum": ["steady", "headUp", "bearAway"]
+                ],
+                "sailTrimRecommendation": [
+                    "type": "STRING",
+                    "enum": ["hold", "sheetIn", "ease"]
+                ]
+            ],
+            "required": ["recommendedHeadsail", "steeringRecommendation", "sailTrimRecommendation"]
+        ]
+
+        // Request body with response_schema for guaranteed JSON output
+        // NOTE: Gemini 3 uses "thinking" tokens (~250) so we need extra headroom
         let requestBody: [String: Any] = [
             "contents": [
                 [
                     "parts": [
-                        ["text": systemPrompt],
-                        ["text": prompt]
+                        ["text": systemPrompt + "\n\n" + prompt]
                     ]
                 ]
             ],
             "generationConfig": [
-                "temperature": 0.3,
-                "maxOutputTokens": 150,
-                "responseMimeType": "application/json"
+                "temperature": 0.1,
+                "maxOutputTokens": 1024,  // Increased: Gemini 3 needs ~250 for thinking + output
+                "responseMimeType": "application/json",
+                "responseSchema": jsonSchema
             ]
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        let requestData = try JSONSerialization.data(withJSONObject: requestBody)
+        request.httpBody = requestData
+
+        // Debug: log request
+        if let requestStr = String(data: requestData, encoding: .utf8) {
+            print("📤 Request body: \(requestStr.prefix(500))...")
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw VisualCoachError.invalidResponse
+        }
+
+        // Debug: log raw response
+        if let rawResponse = String(data: data, encoding: .utf8) {
+            print("📥 Raw API response: \(rawResponse.prefix(500))...")
         }
 
         if httpResponse.statusCode != 200 {
@@ -215,17 +234,54 @@ class Gemini3VisualCoachService: ObservableObject {
         }
 
         // Parse response
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let candidates = json["candidates"] as? [[String: Any]],
-              let firstCandidate = candidates.first,
-              let content = firstCandidate["content"] as? [String: Any],
-              let parts = content["parts"] as? [[String: Any]],
-              let firstPart = parts.first,
-              let text = firstPart["text"] as? String else {
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            print("❌ Failed to parse API response as JSON")
             throw VisualCoachError.parseError
         }
 
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Debug: log full response structure on error
+        guard let candidates = json["candidates"] as? [[String: Any]],
+              let firstCandidate = candidates.first,
+              let content = firstCandidate["content"] as? [String: Any],
+              let parts = content["parts"] as? [[String: Any]] else {
+            print("❌ Response structure: \(json)")
+            if let promptFeedback = json["promptFeedback"] as? [String: Any] {
+                print("⚠️ Prompt feedback: \(promptFeedback)")
+            }
+            throw VisualCoachError.parseError
+        }
+
+        // Gemini 3 with responseMimeType=application/json should return pure JSON
+        // But may include "thinking" parts - extract the actual JSON content
+        var jsonText: String? = nil
+
+        for part in parts {
+            if let text = part["text"] as? String {
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                // With responseSchema, Gemini 3 returns raw JSON (no markdown backticks)
+                if trimmed.hasPrefix("{") && trimmed.hasSuffix("}") {
+                    jsonText = trimmed
+                    break
+                }
+                // Also check if it contains our schema keys (might have extra whitespace)
+                if trimmed.contains("recommendedHeadsail") && trimmed.contains("{") {
+                    jsonText = trimmed
+                    break
+                }
+            }
+        }
+
+        // If still no JSON found, try first text part
+        if jsonText == nil, let firstPart = parts.first, let text = firstPart["text"] as? String {
+            jsonText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard let result = jsonText else {
+            print("❌ No text found in response parts: \(parts)")
+            throw VisualCoachError.parseError
+        }
+
+        return result
     }
 
     // MARK: - Response Parsing
@@ -237,6 +293,15 @@ class Gemini3VisualCoachService: ObservableObject {
             .replacingOccurrences(of: "```", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // Extract JSON object from response - find content between { and }
+        if let startIndex = cleanJson.firstIndex(of: "{"),
+           let endIndex = cleanJson.lastIndex(of: "}") {
+            cleanJson = String(cleanJson[startIndex...endIndex])
+        } else {
+            print("❌ No JSON object found in response")
+            throw VisualCoachError.parseError
+        }
+
         guard let jsonData = cleanJson.data(using: .utf8) else {
             throw VisualCoachError.parseError
         }
@@ -247,7 +312,7 @@ class Gemini3VisualCoachService: ObservableObject {
             return recommendations
         } catch {
             print("❌ JSON decode error: \(error)")
-            print("❌ Raw JSON: \(cleanJson)")
+            print("❌ Extracted JSON: \(cleanJson)")
             throw VisualCoachError.parseError
         }
     }

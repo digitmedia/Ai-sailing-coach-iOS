@@ -135,6 +135,12 @@ class SailingViewModel: ObservableObject {
         signalKSimulator?.start(scenario: simulationScenario)
         isSimulatorRunning = true
         connectionStatus = .connected
+
+        // Auto-start visual coach when simulator starts
+        if !isVisualCoachActive {
+            print("🎯 Auto-starting visual coach with simulator")
+            visualCoachService?.start()
+        }
     }
 
     func stopSimulator() {
