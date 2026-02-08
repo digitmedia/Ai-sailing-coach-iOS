@@ -162,7 +162,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
 
-                    Link("Spatial Sail Website", destination: URL(string: "https://spatialsail.com")!)
+                    Link("Spatial Sail Website", destination: URL(string: "https://spatialsail.app")!)
                 } header: {
                     Text("About")
                 }
