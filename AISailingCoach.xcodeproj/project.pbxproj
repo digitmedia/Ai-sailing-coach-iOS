@@ -63,6 +63,8 @@
 		F937264A2F38AC0800F0FD1A /* 1024.png in Resources */ = {isa = PBXBuildFile; fileRef = F93726242F38AC0800F0FD1A /* 1024.png */; };
 		F937264B2F38AC0800F0FD1A /* 102.png in Resources */ = {isa = PBXBuildFile; fileRef = F93726142F38AC0800F0FD1A /* 102.png */; };
 		F937264C2F38AC0800F0FD1A /* 216.png in Resources */ = {isa = PBXBuildFile; fileRef = F937261F2F38AC0800F0FD1A /* 216.png */; };
+		F93B0CA92F3904C00023A61F /* CoachRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B0CA82F3904C00023A61F /* CoachRecommendations.swift */; };
+		F93B0CAB2F3904EA0023A61F /* Gemini3VisualCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -124,6 +126,8 @@
 		F93726232F38AC0800F0FD1A /* 512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 512.png; sourceTree = "<group>"; };
 		F93726242F38AC0800F0FD1A /* 1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 1024.png; sourceTree = "<group>"; };
 		F93726252F38AC0800F0FD1A /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+		F93B0CA82F3904C00023A61F /* CoachRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachRecommendations.swift; sourceTree = "<group>"; };
+		F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gemini3VisualCoachService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,6 +184,7 @@
 		EE0005 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F93B0CA82F3904C00023A61F /* CoachRecommendations.swift */,
 				BB0002 /* SailingData.swift */,
 				BB0003 /* SignalKMessage.swift */,
 			);
@@ -209,6 +214,7 @@
 		EE0008 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */,
 				BB0012 /* SignalKSimulator.swift */,
 				BB0013 /* GeminiCoachService.swift */,
 				BB0018 /* GeminiLiveClient.swift */,
@@ -421,7 +427,9 @@
 				AA0006 /* DataBoxesView.swift in Sources */,
 				F93725FF2F389D4B00F0FD1A /* CoachInstructionPanesView.swift in Sources */,
 				AA0007 /* PerformanceGaugeView.swift in Sources */,
+				F93B0CAB2F3904EA0023A61F /* Gemini3VisualCoachService.swift in Sources */,
 				AA0008 /* CoachButtonView.swift in Sources */,
+				F93B0CA92F3904C00023A61F /* CoachRecommendations.swift in Sources */,
 				AA0009 /* SettingsView.swift in Sources */,
 				AA0010 /* ColorExtensions.swift in Sources */,
 				AA0011 /* SailingViewModel.swift in Sources */,

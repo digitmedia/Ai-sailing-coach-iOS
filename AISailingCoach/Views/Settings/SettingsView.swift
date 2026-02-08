@@ -48,6 +48,28 @@ struct SettingsView: View {
                     Text("Your API key is stored locally on your device.")
                 }
 
+                // Visual Coach (Gemini 3)
+                Section {
+                    Toggle("Visual Coach Active", isOn: Binding(
+                        get: { viewModel.isVisualCoachActive },
+                        set: { _ in viewModel.toggleVisualCoach() }
+                    ))
+
+                    if viewModel.isVisualCoachActive {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Updating every 10 seconds")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } header: {
+                    Label("Visual Coach", systemImage: "gauge.with.needle")
+                } footer: {
+                    Text("Visual Coach uses Gemini 3 Flash to provide real-time sailing recommendations in the instruction panes.")
+                }
+
                 // LLM Provider Selection
                 Section {
                     Picker("AI Provider", selection: .constant("gemini")) {

@@ -34,10 +34,19 @@ class SailingViewModel: ObservableObject {
     /// Connection status
     @Published var connectionStatus: ConnectionStatus = .disconnected
 
+    // MARK: - Visual Coach (Gemini 3)
+
+    /// Visual coach recommendations for the 4 instruction panes
+    @Published var visualCoachRecommendations: CoachRecommendations?
+
+    /// Whether the visual coach is active
+    @Published var isVisualCoachActive: Bool = false
+
     // MARK: - Services
 
     private var signalKSimulator: SignalKSimulator?
     private var geminiCoachService: GeminiCoachService?
+    private var visualCoachService: Gemini3VisualCoachService?
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
@@ -93,6 +102,29 @@ class SailingViewModel: ObservableObject {
                 if connected {
                     self?.connectionStatus = .connected
                 }
+            }
+            .store(in: &cancellables)
+
+        // Initialize Gemini 3 Visual Coach Service
+        visualCoachService = Gemini3VisualCoachService()
+
+        // Setup callback to get sailing data
+        visualCoachService?.getSailingData = { [weak self] in
+            self?.sailingData ?? .empty
+        }
+
+        // Subscribe to visual coach recommendations
+        visualCoachService?.$recommendations
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] recommendations in
+                self?.visualCoachRecommendations = recommendations
+            }
+            .store(in: &cancellables)
+
+        visualCoachService?.$isActive
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] active in
+                self?.isVisualCoachActive = active
             }
             .store(in: &cancellables)
     }
@@ -157,10 +189,23 @@ class SailingViewModel: ObservableObject {
         )
     }
 
+    // MARK: - Visual Coach Control
+
+    func toggleVisualCoach() {
+        if isVisualCoachActive {
+            print("🛑 Stopping visual coach")
+            visualCoachService?.stop()
+        } else {
+            print("▶️ Starting visual coach")
+            visualCoachService?.start()
+        }
+    }
+
     // MARK: - Configuration
 
     func configureGeminiAPI(key: String) {
         geminiCoachService?.configure(apiKey: key)
+        visualCoachService?.configure(apiKey: key)
     }
 }
 

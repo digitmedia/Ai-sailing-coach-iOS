@@ -25,7 +25,8 @@ struct ContentView: View {
                         sailingData: viewModel.sailingData,
                         isCoachActive: viewModel.isPushToTalkActive,
                         coachState: viewModel.coachState,
-                        onCoachToggle: { viewModel.toggleLiveSession() }
+                        onCoachToggle: { viewModel.toggleLiveSession() },
+                        visualCoachRecommendations: viewModel.visualCoachRecommendations
                     )
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
@@ -66,6 +67,9 @@ struct InstrumentPanelView: View {
     let coachState: CoachState
     let onCoachToggle: () -> Void
 
+    // Visual coach recommendations (from Gemini 3)
+    var visualCoachRecommendations: CoachRecommendations?
+
     var body: some View {
         VStack(spacing: 10) {
             // Compass Rose
@@ -94,7 +98,9 @@ struct InstrumentPanelView: View {
             // AI Coach Instruction Panes (Performance, Headsail, Steering, Sail Trim)
             CoachInstructionPanesView(
                 performance: sailingData.performance,
-                apparentWindAngle: sailingData.apparentWindAngle
+                apparentWindAngle: sailingData.apparentWindAngle,
+                trueWindAngle: sailingData.trueWindAngle,
+                recommendations: visualCoachRecommendations
             )
         }
     }

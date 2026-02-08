@@ -33,11 +33,27 @@ enum SailTrimAction: String, CaseIterable {
 struct CoachInstructionPanesView: View {
     let performance: Int
     let apparentWindAngle: Double
+    let trueWindAngle: Double
 
-    // AI Coach instructions (placeholders - will be connected to API later)
-    var currentHeadsail: HeadsailType = .genoa
-    var currentSteering: SteeringAction = .bearAway
-    var currentSailTrim: SailTrimAction = .ease
+    // AI Coach recommendations (from Gemini 3 Visual Coach)
+    var recommendations: CoachRecommendations?
+
+    // Computed properties with fallback to local calculation
+    private var currentHeadsail: HeadsailType {
+        if let rec = recommendations {
+            return rec.recommendedHeadsail.asHeadsailType
+        }
+        // Fallback: calculate from TWA
+        return HeadsailRecommendation.fromWindAngle(trueWindAngle).asHeadsailType
+    }
+
+    private var currentSteering: SteeringAction {
+        recommendations?.steeringRecommendation.asSteeringAction ?? .steady
+    }
+
+    private var currentSailTrim: SailTrimAction {
+        recommendations?.sailTrimRecommendation.asSailTrimAction ?? .hold
+    }
 
     var body: some View {
         LazyVGrid(columns: [
@@ -337,7 +353,8 @@ struct InstructionPaneContainer<Content: View>: View {
 #Preview("Coach Instruction Panes") {
     CoachInstructionPanesView(
         performance: 85,
-        apparentWindAngle: 35
+        apparentWindAngle: 35,
+        trueWindAngle: 42
     )
     .padding()
     .background(Color.black)
