@@ -12,6 +12,7 @@ struct CoachButtonView: View {
     let isActive: Bool
     let coachState: CoachState
     let onToggle: () -> Void
+    var showLabel: Bool = true
 
     @State private var pulseAnimation = false
     @State private var waveAnimation = false
@@ -51,26 +52,26 @@ struct CoachButtonView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Main button
+        VStack(spacing: 8) {
+            // Main button - 20% larger
             ZStack {
                 // Outer glow/pulse ring
                 Circle()
                     .fill(buttonColor.opacity(0.2))
-                    .frame(width: 100, height: 100)
+                    .frame(width: 96, height: 96)
                     .scaleEffect(pulseAnimation ? 1.3 : 1.0)
                     .opacity(pulseAnimation ? 0 : 0.5)
 
                 // Background ring
                 Circle()
-                    .stroke(buttonColor.opacity(0.3), lineWidth: 3)
-                    .frame(width: 80, height: 80)
+                    .stroke(buttonColor.opacity(0.3), lineWidth: 2.5)
+                    .frame(width: 77, height: 77)
 
                 // Active state ring
                 if isActive || coachState != .idle {
                     Circle()
-                        .stroke(buttonColor, lineWidth: 3)
-                        .frame(width: 80, height: 80)
+                        .stroke(buttonColor, lineWidth: 2.5)
+                        .frame(width: 77, height: 77)
                         .scaleEffect(waveAnimation ? 1.1 : 1.0)
                         .opacity(waveAnimation ? 0 : 1)
                 }
@@ -87,8 +88,8 @@ struct CoachButtonView: View {
                             endPoint: .bottom
                         )
                     )
-                    .frame(width: 70, height: 70)
-                    .shadow(color: buttonColor.opacity(0.5), radius: isActive ? 15 : 10)
+                    .frame(width: 68, height: 68)
+                    .shadow(color: buttonColor.opacity(0.5), radius: isActive ? 14 : 10)
 
                 // Icon
                 Image(systemName: iconName)
@@ -96,21 +97,23 @@ struct CoachButtonView: View {
                     .foregroundColor(.white)
                     .symbolEffect(.bounce, value: coachState)
             }
-            .frame(width: 100, height: 100)
+            .frame(width: 96, height: 96)
             .onTapGesture {
                 onToggle()
             }
             .sensoryFeedback(.impact(flexibility: .soft), trigger: isActive)
 
-            // Status label
-            Text(statusText)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .background(.black.opacity(0.6))
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
+            // Status label (optional)
+            if showLabel {
+                Text(statusText)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.6))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+            }
         }
         .onChange(of: coachState) { _, newState in
             if newState == .listening || newState == .processing {

@@ -28,6 +28,13 @@ class GeminiCoachService: ObservableObject {
     private var isSessionActive = false
     private var cancellables = Set<AnyCancellable>()
 
+    // Timer for periodic data updates
+    private var dataUpdateTimer: Timer?
+    private let dataUpdateInterval: TimeInterval = 10.0  // Send data every 10 seconds
+
+    // Callback to get fresh sailing data
+    var getSailingData: (() -> CoachContext)?
+
     // Lazy-loaded speech service (for REST API fallback only)
     private var _speechService: SpeechService?
     private var speechService: SpeechService {
@@ -120,9 +127,13 @@ class GeminiCoachService: ObservableObject {
                     // Send initial sailing context
                     let contextMessage = context.description
                     self?.geminiLiveClient?.sendTextMessage(contextMessage)
+
+                    // Start periodic data updates
+                    self?.startDataUpdateTimer()
                 } else if self?.isSessionActive == true {
                     self?.connectionState = .error
                     self?.currentResponse = "Connection lost"
+                    self?.stopDataUpdateTimer()
                 }
             }
         }
@@ -191,6 +202,9 @@ class GeminiCoachService: ObservableObject {
         print("🛑 Ending live session")
         isSessionActive = false
 
+        // Stop periodic data updates
+        stopDataUpdateTimer()
+
         // Disconnect Gemini Live client
         geminiLiveClient?.disconnect()
         geminiLiveClient = nil
@@ -202,6 +216,66 @@ class GeminiCoachService: ObservableObject {
         connectionState = .idle
         currentResponse = ""
         isConnected = false
+    }
+
+    // MARK: - Periodic Data Updates
+
+    private func startDataUpdateTimer() {
+        stopDataUpdateTimer()  // Clear any existing timer
+
+        print("⏱️ Starting data update timer (every \(dataUpdateInterval)s)")
+
+        dataUpdateTimer = Timer.scheduledTimer(withTimeInterval: dataUpdateInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.sendDataUpdate()
+            }
+        }
+    }
+
+    private func stopDataUpdateTimer() {
+        dataUpdateTimer?.invalidate()
+        dataUpdateTimer = nil
+        print("⏱️ Data update timer stopped")
+    }
+
+    private func sendDataUpdate() {
+        guard isSessionActive, isConnected, let client = geminiLiveClient else { return }
+
+        // Get fresh sailing data from the callback
+        let context: CoachContext
+        if let getSailingData = getSailingData {
+            context = getSailingData()
+        } else if let currentContext = currentContext {
+            context = currentContext
+        } else {
+            return
+        }
+
+        // Update stored context
+        self.currentContext = context
+
+        // Format as a data update message
+        let updateMessage = """
+        [SAILING DATA UPDATE]
+        \(context.description)
+        """
+
+        print("📊 Sending data update to coach")
+        client.sendTextMessage(updateMessage)
+    }
+
+    /// Update the sailing context (can be called externally to push immediate updates)
+    func updateContext(_ context: CoachContext) {
+        self.currentContext = context
+
+        // If connected, send the update immediately
+        if isConnected, let client = geminiLiveClient {
+            let updateMessage = """
+            [SAILING DATA UPDATE]
+            \(context.description)
+            """
+            client.sendTextMessage(updateMessage)
+        }
     }
 
     // MARK: - Send Text Message (for context updates)

@@ -18,28 +18,17 @@ struct ContentView: View {
                 Color.black
                     .ignoresSafeArea()
 
-                // Main content
-                VStack(spacing: 16) {
-                    // Top spacer for status bar
-                    Spacer()
-                        .frame(height: 20)
-
-                    // Instrument Panel - fills available space
+                // Main content - no scrolling, fits screen
+                VStack(spacing: 0) {
+                    // Instrument Panel with new layout
                     InstrumentPanelView(
-                        sailingData: viewModel.sailingData
-                    )
-                    .padding(.horizontal, 16)
-
-                    Spacer()
-                        .frame(minHeight: 20, maxHeight: 40)
-
-                    // AI Coach Button - tap to start/stop live session
-                    CoachButtonView(
-                        isActive: viewModel.isPushToTalkActive,
+                        sailingData: viewModel.sailingData,
+                        isCoachActive: viewModel.isPushToTalkActive,
                         coachState: viewModel.coachState,
-                        onToggle: { viewModel.toggleLiveSession() }
+                        onCoachToggle: { viewModel.toggleLiveSession() }
                     )
-                    .padding(.bottom, 24)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
                 }
 
                 // Coach message overlay
@@ -73,34 +62,41 @@ struct ContentView: View {
 
 struct InstrumentPanelView: View {
     let sailingData: SailingData
+    let isCoachActive: Bool
+    let coachState: CoachState
+    let onCoachToggle: () -> Void
 
     var body: some View {
-        // Bezel effect container
-        VStack(spacing: 0) {
-            VStack(spacing: 16) {
-                // Compass Rose
-                CompassRoseView(
-                    courseOverGround: sailingData.courseOverGround,
-                    trueWindAngle: sailingData.trueWindAngle,
-                    apparentWindAngle: sailingData.apparentWindAngle,
-                    trueWindSpeed: sailingData.trueWindSpeed
-                )
+        VStack(spacing: 10) {
+            // Compass Rose
+            CompassRoseView(
+                courseOverGround: sailingData.courseOverGround,
+                trueWindAngle: sailingData.trueWindAngle,
+                apparentWindAngle: sailingData.apparentWindAngle,
+                trueWindSpeed: sailingData.trueWindSpeed
+            )
 
-                // Speed Data Boxes
-                DataBoxesView(
-                    boatSpeed: sailingData.boatSpeed,
-                    targetSpeed: sailingData.targetSpeed
-                )
-            }
-            .padding(16)
-            .background(LinearGradient.panelBackground)
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+            // AI Coach Button - centered between compass and panes
+            CoachButtonView(
+                isActive: isCoachActive,
+                coachState: coachState,
+                onToggle: onCoachToggle,
+                showLabel: false
+            )
+            .frame(maxWidth: .infinity)
+
+            // Speed Data Boxes (Boat Speed & Target)
+            DataBoxesView(
+                boatSpeed: sailingData.boatSpeed,
+                targetSpeed: sailingData.targetSpeed
+            )
+
+            // AI Coach Instruction Panes (Performance, Headsail, Steering, Sail Trim)
+            CoachInstructionPanesView(
+                performance: sailingData.performance,
+                apparentWindAngle: sailingData.apparentWindAngle
+            )
         }
-        .padding(8)
-        .background(LinearGradient.bezelBackground)
-        .cornerRadius(20)
-        .shadow(color: .black.opacity(0.5), radius: 15, x: 0, y: 8)
     }
 }
 
@@ -151,7 +147,7 @@ struct CoachMessageOverlay: View {
                         .stroke(Color.spatialYellow.opacity(0.5), lineWidth: 1)
                 )
                 .padding(.horizontal, 24)
-                .padding(.bottom, 120)
+                .padding(.bottom, 40)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -174,7 +170,11 @@ struct CoachMessageOverlay: View {
 }
 
 #Preview("Instrument Panel Only") {
-    InstrumentPanelView(sailingData: .upwindSample)
-        .padding()
-        .background(Color.black)
+    InstrumentPanelView(
+        sailingData: .upwindSample,
+        isCoachActive: false,
+        coachState: .idle,
+        onCoachToggle: {}
+    )
+    .background(Color.black)
 }

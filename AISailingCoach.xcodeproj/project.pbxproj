@@ -22,8 +22,9 @@
 		AA0013 /* GeminiCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0013 /* GeminiCoachService.swift */; };
 		AA0014 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014 /* SpeechService.swift */; };
 		AA0015 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015 /* Secrets.swift */; };
-		AA0017 /* GeminiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* GeminiLiveClient.swift */; };
 		AA0016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0016 /* Assets.xcassets */; };
+		AA0017 /* GeminiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* GeminiLiveClient.swift */; };
+		F93725FF2F389D4B00F0FD1A /* CoachInstructionPanesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93725FE2F389D4B00F0FD1A /* CoachInstructionPanesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 		BB0017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0018 /* GeminiLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiLiveClient.swift; sourceTree = "<group>"; };
 		CC0001 /* AISailingCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AISailingCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F93725FE2F389D4B00F0FD1A /* CoachInstructionPanesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachInstructionPanesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +151,7 @@
 		EE0010 /* Instruments */ = {
 			isa = PBXGroup;
 			children = (
+				F93725FE2F389D4B00F0FD1A /* CoachInstructionPanesView.swift */,
 				BB0005 /* CompassRoseView.swift */,
 				BB0006 /* DataBoxesView.swift */,
 				BB0007 /* PerformanceGaugeView.swift */,
@@ -255,6 +258,7 @@
 				AA0004 /* ContentView.swift in Sources */,
 				AA0005 /* CompassRoseView.swift in Sources */,
 				AA0006 /* DataBoxesView.swift in Sources */,
+				F93725FF2F389D4B00F0FD1A /* CoachInstructionPanesView.swift in Sources */,
 				AA0007 /* PerformanceGaugeView.swift in Sources */,
 				AA0008 /* CoachButtonView.swift in Sources */,
 				AA0009 /* SettingsView.swift in Sources */,

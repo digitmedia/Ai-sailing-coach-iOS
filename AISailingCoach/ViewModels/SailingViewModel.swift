@@ -61,6 +61,15 @@ class SailingViewModel: ObservableObject {
         // Initialize Gemini Coach Service
         geminiCoachService = GeminiCoachService()
 
+        // Setup callback for periodic data updates
+        geminiCoachService?.getSailingData = { [weak self] in
+            self?.buildCoachContext() ?? CoachContext(
+                boatSpeed: 0, targetSpeed: 0, performance: 0,
+                trueWindSpeed: 0, trueWindAngle: 0, apparentWindAngle: 0,
+                courseOverGround: 0, pointOfSail: "Unknown"
+            )
+        }
+
         // Subscribe to coach responses
         geminiCoachService?.$currentResponse
             .receive(on: DispatchQueue.main)

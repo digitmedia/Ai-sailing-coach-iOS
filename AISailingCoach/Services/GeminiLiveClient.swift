@@ -314,13 +314,38 @@ class GeminiLiveClient: NSObject, ObservableObject {
     private func startRecording() {
         print("🎙️ Starting audio recording...")
 
+        // IMPORTANT: Configure audio session FIRST, before creating the audio engine
+        // This ensures the hardware sample rate is set before we query it
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+
+            // Set preferred sample rate to 48kHz (standard iOS rate that works well)
+            try audioSession.setPreferredSampleRate(48000)
+
+            // Configure for voice chat with speaker output
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
+            try audioSession.setActive(true)
+
+            print("🎙️ Audio session configured: \(audioSession.sampleRate)Hz")
+        } catch {
+            print("❌ Audio session setup error: \(error)")
+            onError?(error)
+            return
+        }
+
+        // Now create the audio engine after session is configured
         audioEngine = AVAudioEngine()
         guard let audioEngine = audioEngine else { return }
 
         let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
 
-        print("🎙️ Input format: \(inputFormat.sampleRate)Hz, \(inputFormat.channelCount) channels")
+        // Get the actual hardware format after audio session is configured
+        let hardwareFormat = inputNode.inputFormat(forBus: 0)
+        print("🎙️ Hardware input format: \(hardwareFormat.sampleRate)Hz, \(hardwareFormat.channelCount) channels")
+
+        // Use the node's output format which should match what we can tap
+        let inputFormat = inputNode.outputFormat(forBus: 0)
+        print("🎙️ Input node output format: \(inputFormat.sampleRate)Hz, \(inputFormat.channelCount) channels")
 
         // Target format: 16kHz mono float (for conversion to PCM)
         guard let targetFormat = AVAudioFormat(
@@ -333,62 +358,101 @@ class GeminiLiveClient: NSObject, ObservableObject {
             return
         }
 
-        // Create converter
+        // Create converter from input format to target format
         guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
-            print("❌ Failed to create audio converter")
+            print("❌ Failed to create audio converter from \(inputFormat.sampleRate)Hz to \(targetFormat.sampleRate)Hz")
             onError?(GeminiLiveError.audioSetupFailed)
             return
         }
         self.inputConverter = converter
 
-        // Install tap on input
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
-            self?.processInputBuffer(buffer, converter: converter, targetFormat: targetFormat)
-        }
-
-        // Setup audio player for output
+        // Setup audio player for output BEFORE starting the engine
         audioPlayer = AVAudioPlayerNode()
         audioEngine.attach(audioPlayer!)
         audioEngine.connect(audioPlayer!, to: audioEngine.mainMixerNode, format: outputFormat)
 
+        // Prepare the engine (this helps prevent format mismatches)
+        audioEngine.prepare()
+
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
-            try AVAudioSession.sharedInstance().setActive(true)
             try audioEngine.start()
-
-            audioPlayer?.play()
-
-            DispatchQueue.main.async {
-                self.isRecording = true
-            }
-            print("✅ Audio recording started")
+            print("✅ Audio engine started")
         } catch {
             print("❌ Audio engine start error: \(error)")
             onError?(error)
+            return
         }
+
+        // Install tap AFTER the engine is started
+        // Use nil format to let the system choose the best format for the tap
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buffer, _ in
+            guard let self = self else { return }
+            // Skip sending audio while model is speaking (prevents echo)
+            guard !self.isModelSpeaking else { return }
+            self.processInputBuffer(buffer, converter: converter, targetFormat: targetFormat)
+        }
+
+        audioPlayer?.play()
+
+        DispatchQueue.main.async {
+            self.isRecording = true
+        }
+        print("✅ Audio recording started")
     }
 
     private func processInputBuffer(_ buffer: AVAudioPCMBuffer,
                                     converter: AVAudioConverter,
                                     targetFormat: AVAudioFormat) {
+        // If formats match the converter's input, use the converter
+        // Otherwise, we need to handle the format difference
+        let bufferFormat = buffer.format
+
         // Calculate frame count for converted buffer
-        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let ratio = targetFormat.sampleRate / bufferFormat.sampleRate
         let frameCount = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+
+        guard frameCount > 0 else { return }
 
         guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: frameCount) else {
             return
         }
 
+        // Check if we need to create a new converter for this buffer format
+        let currentConverter: AVAudioConverter
+        if bufferFormat.sampleRate == converter.inputFormat.sampleRate &&
+           bufferFormat.channelCount == converter.inputFormat.channelCount {
+            currentConverter = converter
+        } else {
+            // Create a new converter for the actual buffer format
+            guard let newConverter = AVAudioConverter(from: bufferFormat, to: targetFormat) else {
+                print("❌ Failed to create converter for format: \(bufferFormat.sampleRate)Hz")
+                return
+            }
+            currentConverter = newConverter
+        }
+
         var error: NSError?
+        var inputBufferConsumed = false
+
         let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+            if inputBufferConsumed {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+            inputBufferConsumed = true
             outStatus.pointee = .haveData
             return buffer
         }
 
-        converter.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
+        let status = currentConverter.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
 
         if let error = error {
             print("❌ Conversion error: \(error)")
+            return
+        }
+
+        if status == .error {
+            print("❌ Conversion status error")
             return
         }
 
