@@ -154,7 +154,7 @@ Part of the Spatial Sail project. See LICENSE for details.
 
 ## Credits
 
-- **Design**: Based on Figma mockups following Orca app aesthetics
+- **Design**: Based on Figma mockups
 - **AI**: Powered by Google Gemini Live API
 - **Data Protocol**: Signal K open marine data standard
 
