@@ -39,8 +39,8 @@ class SailingViewModel: ObservableObject {
     /// Visual coach recommendations for the 4 instruction panes
     @Published var visualCoachRecommendations: CoachRecommendations?
 
-    /// Whether the visual coach is active
-    @Published var isVisualCoachActive: Bool = false
+    /// Whether the visual coach is active (defaults to true, persisted in UserDefaults)
+    @Published var isVisualCoachActive: Bool = UserDefaults.standard.object(forKey: "VisualCoachEnabled") as? Bool ?? true
 
     // MARK: - Services
 
@@ -201,9 +201,11 @@ class SailingViewModel: ObservableObject {
         if isVisualCoachActive {
             print("🛑 Stopping visual coach")
             visualCoachService?.stop()
+            UserDefaults.standard.set(false, forKey: "VisualCoachEnabled")
         } else {
             print("▶️ Starting visual coach")
             visualCoachService?.start()
+            UserDefaults.standard.set(true, forKey: "VisualCoachEnabled")
         }
     }
 
