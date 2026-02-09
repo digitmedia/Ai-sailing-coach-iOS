@@ -278,14 +278,17 @@ class SignalKSimulator: ObservableObject {
         // Convert to radians
         let twaRad = twa * .pi / 180
 
-        // True wind components
-        let twsX = tws * sin(twaRad)
-        let twsY = tws * cos(twaRad)
+        // True wind components (relative to boat heading)
+        // X = perpendicular to boat (positive = wind from port pushing to starboard)
+        // Y = along boat centerline (positive = wind from ahead pushing aft)
+        let twsX = tws * sin(twaRad)   // Lateral component
+        let twsY = tws * cos(twaRad)   // Forward component
 
-        // Apparent wind is true wind minus boat velocity
-        // (boat velocity adds headwind component)
+        // Apparent wind = true wind + headwind from boat motion
+        // Boat moving forward creates apparent wind from ahead,
+        // which ADDS to the forward wind component
         let awsX = twsX
-        let awsY = twsY - boatSpeed
+        let awsY = twsY + boatSpeed  // ADD boat speed (headwind effect)
 
         // Calculate apparent wind speed and angle
         let aws = sqrt(awsX * awsX + awsY * awsY)
@@ -296,6 +299,7 @@ class SignalKSimulator: ObservableObject {
             awa += 360
         }
 
+        // AWA should now be smaller than TWA (wind shifts forward due to boat motion)
         return (aws: aws, awa: awa)
     }
 

@@ -34,10 +34,19 @@ class SailingViewModel: ObservableObject {
     /// Connection status
     @Published var connectionStatus: ConnectionStatus = .disconnected
 
+    // MARK: - Visual Coach (Gemini 3)
+
+    /// Visual coach recommendations for the 4 instruction panes
+    @Published var visualCoachRecommendations: CoachRecommendations?
+
+    /// Whether the visual coach is active (defaults to true, persisted in UserDefaults)
+    @Published var isVisualCoachActive: Bool = UserDefaults.standard.object(forKey: "VisualCoachEnabled") as? Bool ?? true
+
     // MARK: - Services
 
     private var signalKSimulator: SignalKSimulator?
     private var geminiCoachService: GeminiCoachService?
+    private var visualCoachService: Gemini3VisualCoachService?
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
@@ -60,6 +69,15 @@ class SailingViewModel: ObservableObject {
 
         // Initialize Gemini Coach Service
         geminiCoachService = GeminiCoachService()
+
+        // Setup callback for periodic data updates
+        geminiCoachService?.getSailingData = { [weak self] in
+            self?.buildCoachContext() ?? CoachContext(
+                boatSpeed: 0, targetSpeed: 0, performance: 0,
+                trueWindSpeed: 0, trueWindAngle: 0, apparentWindAngle: 0,
+                courseOverGround: 0, pointOfSail: "Unknown"
+            )
+        }
 
         // Subscribe to coach responses
         geminiCoachService?.$currentResponse
@@ -86,6 +104,25 @@ class SailingViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        // Initialize Gemini 3 Visual Coach Service
+        visualCoachService = Gemini3VisualCoachService()
+
+        // Setup callback to get sailing data
+        visualCoachService?.getSailingData = { [weak self] in
+            self?.sailingData ?? .empty
+        }
+
+        // Subscribe to visual coach recommendations
+        visualCoachService?.$recommendations
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] recommendations in
+                self?.visualCoachRecommendations = recommendations
+            }
+            .store(in: &cancellables)
+
+        // Note: isVisualCoachActive is managed via UserDefaults, not synced from service
+        // This allows the setting to persist and show correctly on app launch
     }
 
     // MARK: - Simulator Control
@@ -94,6 +131,12 @@ class SailingViewModel: ObservableObject {
         signalKSimulator?.start(scenario: simulationScenario)
         isSimulatorRunning = true
         connectionStatus = .connected
+
+        // Auto-start visual coach when simulator starts (if enabled in settings)
+        if isVisualCoachActive {
+            print("🎯 Auto-starting visual coach with simulator")
+            visualCoachService?.start()
+        }
     }
 
     func stopSimulator() {
@@ -148,10 +191,27 @@ class SailingViewModel: ObservableObject {
         )
     }
 
+    // MARK: - Visual Coach Control
+
+    func toggleVisualCoach() {
+        if isVisualCoachActive {
+            print("🛑 Stopping visual coach")
+            visualCoachService?.stop()
+            isVisualCoachActive = false
+            UserDefaults.standard.set(false, forKey: "VisualCoachEnabled")
+        } else {
+            print("▶️ Starting visual coach")
+            visualCoachService?.start()
+            isVisualCoachActive = true
+            UserDefaults.standard.set(true, forKey: "VisualCoachEnabled")
+        }
+    }
+
     // MARK: - Configuration
 
     func configureGeminiAPI(key: String) {
         geminiCoachService?.configure(apiKey: key)
+        visualCoachService?.configure(apiKey: key)
     }
 }
 

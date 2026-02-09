@@ -12,7 +12,7 @@ struct DataBoxesView: View {
     let targetSpeed: Double
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             DataBox(
                 label: "BOAT SPEED",
                 value: boatSpeed,
@@ -36,30 +36,30 @@ struct DataBox: View {
     let unit: String
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.spatialYellow)
-                .tracking(1.5)
+                .tracking(1)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(String(format: "%.1f", value))
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
                     .monospacedDigit()
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
 
                 Text(unit)
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.6))
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 6)
         .background(Color.black.opacity(0.8))
         .background(.ultraThinMaterial)
         .cornerRadius(12)
