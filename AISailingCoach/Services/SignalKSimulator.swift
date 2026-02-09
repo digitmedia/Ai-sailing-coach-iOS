@@ -314,7 +314,7 @@ class SignalKSimulator: ObservableObject {
 
 // MARK: - Signal K WebSocket Client (for real server connection)
 
-class SignalKClient: ObservableObject {
+class SignalKClient: NSObject, ObservableObject, URLSessionWebSocketDelegate {
     @Published var currentData: SailingData = .empty
     @Published var connectionState: ConnectionState = .disconnected
 
@@ -327,19 +327,54 @@ class SignalKClient: ObservableObject {
 
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession?
+    private var messageCount = 0
 
     func connect(to url: URL) {
+        print("🔌 SignalKClient: Connecting to \(url)")
         connectionState = .connecting
 
-        urlSession = URLSession(configuration: .default)
+        // Create session that allows self-signed certificates (for local development)
+        let config = URLSessionConfiguration.default
+        urlSession = URLSession(configuration: config, delegate: self, delegateQueue: nil)
         webSocketTask = urlSession?.webSocketTask(with: url)
         webSocketTask?.resume()
 
         connectionState = .connected
+        print("✅ SignalKClient: WebSocket connected, waiting for messages...")
         receiveMessage()
     }
 
+    // MARK: - URLSessionWebSocketDelegate
+
+    // Allow self-signed certificates for local Signal K servers
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
+                    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        // For local development, trust self-signed certificates
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let serverTrust = challenge.protectionSpace.serverTrust {
+            print("🔐 SignalKClient: Accepting self-signed certificate for \(challenge.protectionSpace.host)")
+            let credential = URLCredential(trust: serverTrust)
+            completionHandler(.useCredential, credential)
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
+                    didOpenWithProtocol protocol: String?) {
+        print("✅ SignalKClient: WebSocket opened with protocol: \(`protocol` ?? "none")")
+    }
+
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
+                    didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("🔌 SignalKClient: WebSocket closed with code: \(closeCode)")
+        DispatchQueue.main.async {
+            self.connectionState = .disconnected
+        }
+    }
+
     func disconnect() {
+        print("🔌 SignalKClient: Disconnecting")
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         webSocketTask = nil
         connectionState = .disconnected
@@ -363,6 +398,7 @@ class SignalKClient: ObservableObject {
                 self?.receiveMessage()
 
             case .failure(let error):
+                print("❌ SignalKClient: WebSocket error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self?.connectionState = .error(error.localizedDescription)
                 }
@@ -371,10 +407,35 @@ class SignalKClient: ObservableObject {
     }
 
     private func handleMessage(_ message: String) {
-        guard let delta = SignalKParser.parse(json: message) else { return }
+        messageCount += 1
+
+        // Log first few messages and then periodically
+        if messageCount <= 3 || messageCount % 100 == 0 {
+            print("📨 SignalKClient: Message #\(messageCount): \(message.prefix(200))...")
+        }
+
+        // Signal K sends different message types - skip non-delta messages
+        // Hello message starts with {"name":...}
+        // Delta messages have "updates" array
+        guard message.contains("\"updates\"") else {
+            if messageCount <= 3 {
+                print("⏭️ SignalKClient: Skipping non-delta message")
+            }
+            return
+        }
+
+        guard let delta = SignalKParser.parse(json: message) else {
+            print("❌ SignalKClient: Failed to parse delta message")
+            return
+        }
 
         DispatchQueue.main.async {
             self.currentData = SignalKParser.parse(delta: delta, into: self.currentData)
+
+            // Log periodically to show current values
+            if self.messageCount % 50 == 0 {
+                print("⛵ SignalK Data: speed=\(String(format: "%.1f", self.currentData.boatSpeed))kts, AWS=\(String(format: "%.1f", self.currentData.apparentWindSpeed))kts, AWA=\(String(format: "%.0f", self.currentData.apparentWindAngle))°, TWS=\(String(format: "%.1f", self.currentData.trueWindSpeed))kts, TWA=\(String(format: "%.0f", self.currentData.trueWindAngle))°")
+            }
         }
     }
 }

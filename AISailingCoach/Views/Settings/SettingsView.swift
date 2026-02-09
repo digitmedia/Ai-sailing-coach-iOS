@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var apiKey: String = ""
     @State private var showAPIKey = false
     @State private var selectedScenario: SimulationScenario = .upwind
+    @State private var signalKURL: String = "ws://localhost:3000/signalk/v1/stream?subscribe=all"
 
     var body: some View {
         NavigationStack {
@@ -115,9 +116,21 @@ struct SettingsView: View {
 
                 // Connection Settings (for real Signal K server)
                 Section {
-                    TextField("Signal K Server URL", text: .constant(""))
-                        .disabled(true)
-                        .foregroundColor(.secondary)
+                    TextField("Signal K Server URL", text: $signalKURL)
+                        .autocapitalization(.none)
+                        .keyboardType(.URL)
+                        .textContentType(.URL)
+
+                    Toggle("Use Signal K Server", isOn: Binding(
+                        get: { viewModel.useRealSignalK },
+                        set: { newValue in
+                            if newValue {
+                                viewModel.connectToSignalK(url: signalKURL)
+                            } else {
+                                viewModel.disconnectSignalK()
+                            }
+                        }
+                    ))
 
                     HStack {
                         Circle()
@@ -129,7 +142,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Signal K Server")
                 } footer: {
-                    Text("Connect to a real Signal K server for live boat data. Currently using simulator.")
+                    Text("Connect to a real Signal K server for live boat data. Default: ws://localhost:3000/signalk/v1/stream?subscribe=all")
                 }
 
                 // Display Settings
@@ -181,6 +194,10 @@ struct SettingsView: View {
             // Load saved API key
             if let savedKey = UserDefaults.standard.string(forKey: "GeminiAPIKey") {
                 apiKey = savedKey
+            }
+            // Load saved Signal K URL
+            if let savedURL = UserDefaults.standard.string(forKey: "SignalKServerURL") {
+                signalKURL = savedURL
             }
             selectedScenario = viewModel.simulationScenario
         }
