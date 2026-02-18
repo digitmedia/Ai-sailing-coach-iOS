@@ -11,7 +11,7 @@ import Combine
 
 /// Service for getting visual sailing recommendations from Gemini 3 Flash
 @MainActor
-class Gemini3VisualCoachService: ObservableObject {
+class Gemini3VisualCoachService: ObservableObject, VisualCoachService {
 
     // MARK: - Published Properties
 
@@ -20,6 +20,10 @@ class Gemini3VisualCoachService: ObservableObject {
     @Published var isActive: Bool = false
     @Published var lastError: String?
     @Published var isLoading: Bool = false
+
+    var recommendationsPublisher: AnyPublisher<CoachRecommendations?, Never> {
+        $recommendations.eraseToAnyPublisher()
+    }
 
     // MARK: - Configuration
 

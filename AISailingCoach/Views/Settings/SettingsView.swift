@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var showAPIKey = false
     @State private var selectedScenario: SimulationScenario = .upwind
     @State private var signalKURL: String = "ws://localhost:3000/signalk/v1/stream?subscribe=all"
+    @State private var showProviderAlert = false
 
     var body: some View {
         NavigationStack {
@@ -49,7 +50,7 @@ struct SettingsView: View {
                     Text("Your API key is stored locally on your device.")
                 }
 
-                // Visual Coach (Gemini 3)
+                // Visual Coach
                 Section {
                     Toggle("Visual Coach Active", isOn: Binding(
                         get: { viewModel.isVisualCoachActive },
@@ -68,20 +69,41 @@ struct SettingsView: View {
                 } header: {
                     Label("Visual Coach", systemImage: "gauge.with.needle")
                 } footer: {
-                    Text("Visual Coach uses Gemini 3 Flash to provide real-time sailing recommendations in the instruction panes.")
+                    Text(visualCoachFooter)
                 }
 
-                // LLM Provider Selection
+                // Visual Coach AI Provider
                 Section {
-                    Picker("AI Provider", selection: .constant("gemini")) {
-                        Text("Gemini Live API").tag("gemini")
-                        Text("Apple Foundation Models").tag("apple")
-                            .disabled(true)
+                    Picker("Visual Coach AI", selection: Binding(
+                        get: { viewModel.visualCoachProvider },
+                        set: { viewModel.setVisualCoachProvider($0) }
+                    )) {
+                        Text("Gemini 3 Flash").tag(VisualCoachProvider.gemini)
+                        Text("Apple Foundation Models").tag(VisualCoachProvider.apple)
+                            .disabled(!viewModel.isAppleProviderAvailable)
+                    }
+
+                    if !viewModel.isAppleProviderAvailable {
+                        Label(viewModel.appleProviderUnavailableReason, systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    } else if viewModel.visualCoachProvider == .apple {
+                        Label("On-device — no API key or network required", systemImage: "cpu")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("AI Model")
                 } footer: {
-                    Text("Apple Foundation Models support coming in a future update.")
+                    Text(appleProviderFooter)
+                }
+                .alert("Provider Unavailable", isPresented: $showProviderAlert) {
+                    Button("OK") { viewModel.visualCoachProviderError = nil }
+                } message: {
+                    Text(viewModel.visualCoachProviderError ?? "")
+                }
+                .onChange(of: viewModel.visualCoachProviderError) { _, error in
+                    showProviderAlert = error != nil
                 }
 
                 // Simulator Settings
@@ -201,6 +223,24 @@ struct SettingsView: View {
             }
             selectedScenario = viewModel.simulationScenario
         }
+    }
+
+    // MARK: - Computed Properties
+
+    private var visualCoachFooter: String {
+        switch viewModel.visualCoachProvider {
+        case .gemini:
+            return "Visual Coach uses Gemini 3 Flash to provide real-time sailing recommendations in the instruction panes."
+        case .apple:
+            return "Visual Coach uses Apple Foundation Models (on-device) to provide real-time sailing recommendations."
+        }
+    }
+
+    private var appleProviderFooter: String {
+        if viewModel.isAppleProviderAvailable {
+            return "Apple Foundation Models runs fully on-device — private, free, and works without a network connection. Gemini 3 Flash uses the cloud and requires an API key."
+        }
+        return "Apple Foundation Models requires iOS 26 or later with Apple Intelligence enabled. Gemini 3 Flash works on all supported devices."
     }
 }
 

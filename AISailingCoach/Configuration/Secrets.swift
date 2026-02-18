@@ -45,8 +45,8 @@ enum APIConfiguration {
 
     // MARK: - Feature Flags
 
-    /// Enable Apple Foundation Models (when available)
-    static let enableAppleFoundationModels = false
+    /// Enable Apple Foundation Models (iOS 26+, requires Apple Intelligence)
+    static let enableAppleFoundationModels = true
 
     /// Enable advanced tactical features
     static let enableTacticalFeatures = false
@@ -65,5 +65,6 @@ extension UserDefaults {
         static let highContrastMode = "HighContrastMode"
         static let nightMode = "NightMode"
         static let updateRate = "UpdateRate"
+        static let visualCoachProvider = "VisualCoachProvider"
     }
 }

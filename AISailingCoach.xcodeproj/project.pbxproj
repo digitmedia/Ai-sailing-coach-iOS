@@ -65,6 +65,8 @@
 		F937264C2F38AC0800F0FD1A /* 216.png in Resources */ = {isa = PBXBuildFile; fileRef = F937261F2F38AC0800F0FD1A /* 216.png */; };
 		F93B0CA92F3904C00023A61F /* CoachRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B0CA82F3904C00023A61F /* CoachRecommendations.swift */; };
 		F93B0CAB2F3904EA0023A61F /* Gemini3VisualCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */; };
+		AA0018 /* VisualCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0019 /* VisualCoachService.swift */; };
+		AA0019 /* AppleFoundationCoachService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0020 /* AppleFoundationCoachService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -128,6 +130,8 @@
 		F93726252F38AC0800F0FD1A /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
 		F93B0CA82F3904C00023A61F /* CoachRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachRecommendations.swift; sourceTree = "<group>"; };
 		F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gemini3VisualCoachService.swift; sourceTree = "<group>"; };
+		BB0019 /* VisualCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualCoachService.swift; sourceTree = "<group>"; };
+		BB0020 /* AppleFoundationCoachService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFoundationCoachService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -214,7 +218,9 @@
 		EE0008 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				BB0019 /* VisualCoachService.swift */,
 				F93B0CAA2F3904EA0023A61F /* Gemini3VisualCoachService.swift */,
+				BB0020 /* AppleFoundationCoachService.swift */,
 				BB0012 /* SignalKSimulator.swift */,
 				BB0013 /* GeminiCoachService.swift */,
 				BB0018 /* GeminiLiveClient.swift */,
@@ -438,6 +444,8 @@
 				AA0014 /* SpeechService.swift in Sources */,
 				AA0015 /* Secrets.swift in Sources */,
 				AA0017 /* GeminiLiveClient.swift in Sources */,
+				AA0018 /* VisualCoachService.swift in Sources */,
+				AA0019 /* AppleFoundationCoachService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

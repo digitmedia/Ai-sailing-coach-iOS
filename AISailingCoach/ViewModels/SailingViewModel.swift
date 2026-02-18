@@ -9,6 +9,10 @@ import Foundation
 import Combine
 import SwiftUI
 
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
+
 @MainActor
 class SailingViewModel: ObservableObject {
     // MARK: - Published Properties
@@ -34,7 +38,7 @@ class SailingViewModel: ObservableObject {
     /// Connection status
     @Published var connectionStatus: ConnectionStatus = .disconnected
 
-    // MARK: - Visual Coach (Gemini 3)
+    // MARK: - Visual Coach
 
     /// Visual coach recommendations for the 4 instruction panes
     @Published var visualCoachRecommendations: CoachRecommendations?
@@ -45,13 +49,73 @@ class SailingViewModel: ObservableObject {
     /// Whether using real Signal K server (vs simulator) - persisted in UserDefaults
     @Published var useRealSignalK: Bool = UserDefaults.standard.bool(forKey: "UseRealSignalK")
 
+    /// Currently selected visual coach AI provider (persisted in UserDefaults)
+    @Published var visualCoachProvider: VisualCoachProvider = {
+        let raw = UserDefaults.standard.string(forKey: UserDefaults.Keys.visualCoachProvider) ?? "gemini"
+        return VisualCoachProvider(rawValue: raw) ?? .gemini
+    }()
+
+    /// Non-nil when a provider switch was rejected (e.g. Apple Intelligence unavailable).
+    /// SettingsView observes this to show an alert.
+    @Published var visualCoachProviderError: String?
+
+    /// Whether Apple Foundation Models is available on this device/OS.
+    /// Exposed so SettingsView doesn't need to import FoundationModels directly.
+    var isAppleProviderAvailable: Bool {
+        #if canImport(FoundationModels)
+        guard #available(iOS 26, *) else { return false }
+        if case .available = SystemLanguageModel.default.availability { return true }
+        return false
+        #else
+        return false
+        #endif
+    }
+
+    /// Human-readable reason why Apple provider is not available (empty when available).
+    var appleProviderUnavailableReason: String {
+        #if canImport(FoundationModels)
+        guard #available(iOS 26, *) else { return "Requires iOS 26 or later" }
+        switch SystemLanguageModel.default.availability {
+        case .available:
+            return ""
+        case .unavailable(.appleIntelligenceNotEnabled):
+            return "Enable Apple Intelligence in Settings > Apple Intelligence & Siri"
+        case .unavailable(.deviceNotEligible):
+            return "This device does not support Apple Intelligence"
+        case .unavailable(.modelNotReady):
+            return "Apple Intelligence model is downloading — please wait"
+        case .unavailable:
+            return "Apple Intelligence is not available"
+        }
+        #else
+        return "Requires iOS 26 or later"
+        #endif
+    }
+
     // MARK: - Services
 
     private var signalKSimulator: SignalKSimulator?
     private var signalKClient: SignalKClient?
     private var geminiCoachService: GeminiCoachService?
-    private var visualCoachService: Gemini3VisualCoachService?
+
+    // Visual coach services
+    private var geminiVisualCoachService: Gemini3VisualCoachService?
+    private var _appleCoachService: Any?  // Holds AppleFoundationCoachService on iOS 26+
+    private var currentVisualCoachService: (any VisualCoachService)?
+
+    // Dedicated cancellable for the active visual coach — nil'd when switching providers
+    private var visualCoachCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - iOS 26 Accessor
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, *)
+    private var appleCoachService: AppleFoundationCoachService? {
+        get { _appleCoachService as? AppleFoundationCoachService }
+        set { _appleCoachService = newValue }
+    }
+    #endif
 
     // MARK: - Initialization
 
@@ -71,10 +135,9 @@ class SailingViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Initialize Gemini Coach Service
+        // Initialize Gemini Voice Coach Service
         geminiCoachService = GeminiCoachService()
 
-        // Setup callback for periodic data updates
         geminiCoachService?.getSailingData = { [weak self] in
             self?.buildCoachContext() ?? CoachContext(
                 boatSpeed: 0, targetSpeed: 0, performance: 0,
@@ -83,61 +146,46 @@ class SailingViewModel: ObservableObject {
             )
         }
 
-        // Subscribe to coach responses
         geminiCoachService?.$currentResponse
             .receive(on: DispatchQueue.main)
             .sink { [weak self] response in
-                if !response.isEmpty {
-                    self?.coachMessage = response
-                }
+                if !response.isEmpty { self?.coachMessage = response }
             }
             .store(in: &cancellables)
 
         geminiCoachService?.$connectionState
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                self?.coachState = state
-            }
+            .sink { [weak self] state in self?.coachState = state }
             .store(in: &cancellables)
 
         geminiCoachService?.$isConnected
             .receive(on: DispatchQueue.main)
             .sink { [weak self] connected in
-                if connected {
-                    self?.connectionStatus = .connected
-                }
+                if connected { self?.connectionStatus = .connected }
             }
             .store(in: &cancellables)
 
-        // Initialize Gemini 3 Visual Coach Service
-        visualCoachService = Gemini3VisualCoachService()
+        // Initialize Gemini Visual Coach
+        geminiVisualCoachService = Gemini3VisualCoachService()
 
-        // Setup callback to get sailing data
-        visualCoachService?.getSailingData = { [weak self] in
-            self?.sailingData ?? .empty
+        // Initialize Apple Foundation Coach (iOS 26+ only)
+        #if canImport(FoundationModels)
+        if #available(iOS 26, *) {
+            appleCoachService = AppleFoundationCoachService()
         }
+        #endif
 
-        // Subscribe to visual coach recommendations
-        visualCoachService?.$recommendations
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] recommendations in
-                self?.visualCoachRecommendations = recommendations
-            }
-            .store(in: &cancellables)
-
-        // Note: isVisualCoachActive is managed via UserDefaults, not synced from service
-        // This allows the setting to persist and show correctly on app launch
+        // Activate the persisted provider
+        activateProvider(visualCoachProvider)
 
         // Initialize Signal K Client for real server connection
         signalKClient = SignalKClient()
 
-        // Subscribe to real Signal K data
         signalKClient?.$currentData
             .receive(on: DispatchQueue.main)
             .sink { [weak self] data in
                 guard let self = self, self.useRealSignalK else { return }
                 self.sailingData = data
-                // Debug: confirm data is reaching ViewModel
                 if data.apparentWindSpeed > 0 || data.trueWindSpeed > 0 {
                     print("📱 ViewModel received SignalK: AWS=\(String(format: "%.1f", data.apparentWindSpeed))kts, TWS=\(String(format: "%.1f", data.trueWindSpeed))kts")
                 }
@@ -148,22 +196,91 @@ class SailingViewModel: ObservableObject {
         if useRealSignalK {
             if let savedURL = UserDefaults.standard.string(forKey: "SignalKServerURL"), !savedURL.isEmpty {
                 print("🔄 Auto-reconnecting to Signal K server: \(savedURL)")
-                // Use Task to call the async-safe connect method
-                Task { @MainActor in
-                    self.connectToSignalK(url: savedURL)
-                }
+                Task { @MainActor in self.connectToSignalK(url: savedURL) }
             } else {
-                // No saved URL, reset the preference
                 useRealSignalK = false
                 UserDefaults.standard.set(false, forKey: "UseRealSignalK")
             }
         }
     }
 
+    // MARK: - Visual Coach Provider Switching
+
+    /// Switch the active visual coach provider. Shows an error and does nothing if
+    /// the requested provider is not available on this device.
+    func setVisualCoachProvider(_ provider: VisualCoachProvider) {
+        guard provider != visualCoachProvider else { return }
+
+        if provider == .apple {
+            #if canImport(FoundationModels)
+            if #available(iOS 26, *) {
+                if case .available = SystemLanguageModel.default.availability {
+                    // Available — proceed
+                } else {
+                    visualCoachProviderError = appleProviderUnavailableReason
+                    return
+                }
+            } else {
+                visualCoachProviderError = "Apple Foundation Models requires iOS 26 or later."
+                return
+            }
+            #else
+            visualCoachProviderError = "Apple Foundation Models requires iOS 26 or later."
+            return
+            #endif
+        }
+
+        visualCoachProvider = provider
+        UserDefaults.standard.set(provider.rawValue, forKey: UserDefaults.Keys.visualCoachProvider)
+        activateProvider(provider)
+    }
+
+    /// Internal: stop current service, subscribe to new one, start if coach is enabled.
+    private func activateProvider(_ provider: VisualCoachProvider) {
+        // Stop whatever is running and drop the Combine subscription
+        currentVisualCoachService?.stop()
+        visualCoachCancellable = nil
+
+        let service: (any VisualCoachService)?
+
+        switch provider {
+        case .gemini:
+            geminiVisualCoachService?.getSailingData = { [weak self] in self?.sailingData ?? .empty }
+            service = geminiVisualCoachService
+
+        case .apple:
+            #if canImport(FoundationModels)
+            if #available(iOS 26, *) {
+                appleCoachService?.getSailingData = { [weak self] in self?.sailingData ?? .empty }
+                service = appleCoachService
+            } else {
+                // Fall back to Gemini silently on older OS
+                geminiVisualCoachService?.getSailingData = { [weak self] in self?.sailingData ?? .empty }
+                service = geminiVisualCoachService
+            }
+            #else
+            geminiVisualCoachService?.getSailingData = { [weak self] in self?.sailingData ?? .empty }
+            service = geminiVisualCoachService
+            #endif
+        }
+
+        currentVisualCoachService = service
+
+        // Re-subscribe
+        visualCoachCancellable = service?.recommendationsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] recommendations in
+                self?.visualCoachRecommendations = recommendations
+            }
+
+        if isVisualCoachActive {
+            service?.start()
+        }
+    }
+
     // MARK: - Signal K Server Connection
 
     func connectToSignalK(url: String) {
-        // Save URL for future use
         UserDefaults.standard.set(url, forKey: "SignalKServerURL")
 
         guard let serverURL = URL(string: url) else {
@@ -175,21 +292,18 @@ class SailingViewModel: ObservableObject {
         print("🔌 Connecting to Signal K server: \(url)")
         connectionStatus = .connecting
 
-        // Stop simulator if running
         if isSimulatorRunning {
             signalKSimulator?.stop()
             isSimulatorRunning = false
         }
 
-        // Connect to real server
         signalKClient?.connect(to: serverURL)
         useRealSignalK = true
         UserDefaults.standard.set(true, forKey: "UseRealSignalK")
         connectionStatus = .connected
 
-        // Start visual coach if enabled
         if isVisualCoachActive {
-            visualCoachService?.start()
+            currentVisualCoachService?.start()
         }
     }
 
@@ -208,10 +322,9 @@ class SailingViewModel: ObservableObject {
         isSimulatorRunning = true
         connectionStatus = .connected
 
-        // Auto-start visual coach when simulator starts (if enabled in settings)
         if isVisualCoachActive {
             print("🎯 Auto-starting visual coach with simulator")
-            visualCoachService?.start()
+            currentVisualCoachService?.start()
         }
     }
 
@@ -232,26 +345,20 @@ class SailingViewModel: ObservableObject {
         print("🔄 Toggle called. Currently active: \(isPushToTalkActive), state: \(coachState)")
 
         if isPushToTalkActive || coachState != .idle {
-            // Stop the session
             print("⏹️ Stopping session")
             isPushToTalkActive = false
             coachState = .idle
             geminiCoachService?.endLiveSession()
         } else {
-            // Start the session
             print("▶️ Starting session")
             isPushToTalkActive = true
             let context = buildCoachContext()
-            Task {
-                await geminiCoachService?.startLiveSession(context: context)
-            }
+            Task { await geminiCoachService?.startLiveSession(context: context) }
         }
     }
 
     func sendCoachQuery(_ query: String) {
-        Task {
-            await geminiCoachService?.sendTextMessage(query)
-        }
+        Task { await geminiCoachService?.sendTextMessage(query) }
     }
 
     private func buildCoachContext() -> CoachContext {
@@ -272,12 +379,12 @@ class SailingViewModel: ObservableObject {
     func toggleVisualCoach() {
         if isVisualCoachActive {
             print("🛑 Stopping visual coach")
-            visualCoachService?.stop()
+            currentVisualCoachService?.stop()
             isVisualCoachActive = false
             UserDefaults.standard.set(false, forKey: "VisualCoachEnabled")
         } else {
             print("▶️ Starting visual coach")
-            visualCoachService?.start()
+            currentVisualCoachService?.start()
             isVisualCoachActive = true
             UserDefaults.standard.set(true, forKey: "VisualCoachEnabled")
         }
@@ -287,7 +394,8 @@ class SailingViewModel: ObservableObject {
 
     func configureGeminiAPI(key: String) {
         geminiCoachService?.configure(apiKey: key)
-        visualCoachService?.configure(apiKey: key)
+        geminiVisualCoachService?.configure(apiKey: key)
+        // Apple Foundation Coach needs no API key — no-op for apple provider
     }
 }
 
