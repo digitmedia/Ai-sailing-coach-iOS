@@ -54,7 +54,7 @@ class AppleFoundationCoachService: ObservableObject, VisualCoachService {
     // Private @Generable types map to the shared CoachRecommendations model.
 
     @Generable
-    private struct SailingCoachOutput {
+    struct SailingCoachOutput {
         @Guide(description: "Headsail: use genoa for TWA under 50°, code0 for 50-90°, gennaker above 90°")
         var recommendedHeadsail: HeadsailChoice
 
