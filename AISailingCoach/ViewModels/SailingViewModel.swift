@@ -42,9 +42,13 @@ class SailingViewModel: ObservableObject {
     /// Whether the visual coach is active (defaults to true, persisted in UserDefaults)
     @Published var isVisualCoachActive: Bool = UserDefaults.standard.object(forKey: "VisualCoachEnabled") as? Bool ?? true
 
+    /// Whether using real Signal K server (vs simulator) - persisted in UserDefaults
+    @Published var useRealSignalK: Bool = UserDefaults.standard.bool(forKey: "UseRealSignalK")
+
     // MARK: - Services
 
     private var signalKSimulator: SignalKSimulator?
+    private var signalKClient: SignalKClient?
     private var geminiCoachService: GeminiCoachService?
     private var visualCoachService: Gemini3VisualCoachService?
     private var cancellables = Set<AnyCancellable>()
@@ -123,6 +127,78 @@ class SailingViewModel: ObservableObject {
 
         // Note: isVisualCoachActive is managed via UserDefaults, not synced from service
         // This allows the setting to persist and show correctly on app launch
+
+        // Initialize Signal K Client for real server connection
+        signalKClient = SignalKClient()
+
+        // Subscribe to real Signal K data
+        signalKClient?.$currentData
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] data in
+                guard let self = self, self.useRealSignalK else { return }
+                self.sailingData = data
+                // Debug: confirm data is reaching ViewModel
+                if data.apparentWindSpeed > 0 || data.trueWindSpeed > 0 {
+                    print("📱 ViewModel received SignalK: AWS=\(String(format: "%.1f", data.apparentWindSpeed))kts, TWS=\(String(format: "%.1f", data.trueWindSpeed))kts")
+                }
+            }
+            .store(in: &cancellables)
+
+        // Auto-connect to Signal K server if previously enabled
+        if useRealSignalK {
+            if let savedURL = UserDefaults.standard.string(forKey: "SignalKServerURL"), !savedURL.isEmpty {
+                print("🔄 Auto-reconnecting to Signal K server: \(savedURL)")
+                // Use Task to call the async-safe connect method
+                Task { @MainActor in
+                    self.connectToSignalK(url: savedURL)
+                }
+            } else {
+                // No saved URL, reset the preference
+                useRealSignalK = false
+                UserDefaults.standard.set(false, forKey: "UseRealSignalK")
+            }
+        }
+    }
+
+    // MARK: - Signal K Server Connection
+
+    func connectToSignalK(url: String) {
+        // Save URL for future use
+        UserDefaults.standard.set(url, forKey: "SignalKServerURL")
+
+        guard let serverURL = URL(string: url) else {
+            print("❌ Invalid Signal K URL: \(url)")
+            connectionStatus = .error
+            return
+        }
+
+        print("🔌 Connecting to Signal K server: \(url)")
+        connectionStatus = .connecting
+
+        // Stop simulator if running
+        if isSimulatorRunning {
+            signalKSimulator?.stop()
+            isSimulatorRunning = false
+        }
+
+        // Connect to real server
+        signalKClient?.connect(to: serverURL)
+        useRealSignalK = true
+        UserDefaults.standard.set(true, forKey: "UseRealSignalK")
+        connectionStatus = .connected
+
+        // Start visual coach if enabled
+        if isVisualCoachActive {
+            visualCoachService?.start()
+        }
+    }
+
+    func disconnectSignalK() {
+        print("🔌 Disconnecting from Signal K server")
+        signalKClient?.disconnect()
+        useRealSignalK = false
+        UserDefaults.standard.set(false, forKey: "UseRealSignalK")
+        connectionStatus = .disconnected
     }
 
     // MARK: - Simulator Control
