@@ -24,6 +24,7 @@
 		AA0015 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015 /* Secrets.swift */; };
 		AA0016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0016 /* Assets.xcassets */; };
 		AA0017 /* GeminiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* GeminiLiveClient.swift */; };
+		F921519A2F4D006E0007161F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F92151992F4D006E0007161F /* LaunchScreen.storyboard */; };
 		F93725FF2F389D4B00F0FD1A /* CoachInstructionPanesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93725FE2F389D4B00F0FD1A /* CoachInstructionPanesView.swift */; };
 		F93726272F38AC0800F0FD1A /* 50.png in Resources */ = {isa = PBXBuildFile; fileRef = F93726062F38AC0800F0FD1A /* 50.png */; };
 		F93726282F38AC0800F0FD1A /* 172.png in Resources */ = {isa = PBXBuildFile; fileRef = F937261C2F38AC0800F0FD1A /* 172.png */; };
@@ -87,6 +88,7 @@
 		BB0017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0018 /* GeminiLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiLiveClient.swift; sourceTree = "<group>"; };
 		CC0001 /* AISailingCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AISailingCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F92151992F4D006E0007161F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F93725FE2F389D4B00F0FD1A /* CoachInstructionPanesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachInstructionPanesView.swift; sourceTree = "<group>"; };
 		F93726002F38AC0800F0FD1A /* 16.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 16.png; sourceTree = "<group>"; };
 		F93726012F38AC0800F0FD1A /* 20.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 20.png; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 				BB0016 /* Assets.xcassets */,
 				F93726262F38AC0800F0FD1A /* AppIcon.appiconset */,
 				BB0017 /* Info.plist */,
+				F92151992F4D006E0007161F /* LaunchScreen.storyboard */,
 			);
 			path = AISailingCoach;
 			sourceTree = "<group>";
@@ -403,6 +406,7 @@
 				F93726452F38AC0800F0FD1A /* 256.png in Resources */,
 				F93726462F38AC0800F0FD1A /* 108.png in Resources */,
 				F93726472F38AC0800F0FD1A /* Contents.json in Resources */,
+				F921519A2F4D006E0007161F /* LaunchScreen.storyboard in Resources */,
 				F93726482F38AC0800F0FD1A /* 180.png in Resources */,
 				F93726492F38AC0800F0FD1A /* 120.png in Resources */,
 				F937264A2F38AC0800F0FD1A /* 1024.png in Resources */,
