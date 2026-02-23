@@ -161,6 +161,7 @@ class SignalKParser {
     /// Parse a Signal K delta message and extract sailing data
     static func parse(delta: SignalKDelta, into existingData: SailingData) -> SailingData {
         var data = existingData
+        var serverProvidedPolarSpeed = false
 
         for update in delta.updates {
             for value in update.values {
@@ -230,6 +231,7 @@ class SignalKParser {
                      "performance.polarSpeed",
                      "performance.targetSpeed":
                     data.targetSpeed = metersPerSecondToKnots(doubleValue)
+                    serverProvidedPolarSpeed = true
 
                 default:
                     break
@@ -251,8 +253,8 @@ class SignalKParser {
         }
 
         // If target speed wasn't provided by the server, estimate it from TWS and TWA
-        // Uses a simplified polar curve typical for a 35-40ft racing sailboat
-        if data.targetSpeed == 0 && data.trueWindSpeed > 0 {
+        // Always recalculate since TWS/TWA change continuously
+        if !serverProvidedPolarSpeed && data.trueWindSpeed > 0 {
             data.targetSpeed = estimateTargetSpeed(tws: data.trueWindSpeed, twa: abs(data.trueWindAngle))
         }
 
@@ -290,41 +292,40 @@ class SignalKParser {
     }
 
     /// Estimate target boat speed based on TWS and TWA using simplified polar data
-    /// Based on typical modern racing sailboat performance (can exceed wind speed)
+    /// Based on a typical 35-40ft racing keelboat (e.g. J/109, First 40, etc.)
     private static func estimateTargetSpeed(tws: Double, twa: Double) -> Double {
-        // Modern racing boats can exceed wind speed, especially on reaching angles
-        // These ratios are for a well-sailed 35-40ft racing boat with asymmetric spinnaker
+        // Realistic polar ratios (boat speed / true wind speed) for a displacement keelboat
         let polarRatio: Double
 
         switch twa {
         case 0..<30:
             // In irons / pinching - very slow
-            polarRatio = 0.4
+            polarRatio = 0.2
         case 30..<45:
-            // Close hauled - good upwind boats achieve 0.8-0.85x TWS
-            polarRatio = 0.85
+            // Close hauled - typical keelboat: ~5.5-6.5 kts in 10 kts TWS
+            polarRatio = 0.60
         case 45..<60:
-            // Close reach - often exceeds TWS
-            polarRatio = 1.0
+            // Close reach - slightly faster
+            polarRatio = 0.70
         case 60..<90:
-            // Beam reach - fastest angle, can exceed TWS significantly
-            polarRatio = 1.15
+            // Beam reach - fastest angle for displacement boat
+            polarRatio = 0.80
         case 90..<120:
-            // Broad reach with kite - very fast
-            polarRatio = 1.1
+            // Broad reach with kite
+            polarRatio = 0.75
         case 120..<150:
             // Deep broad reach with spinnaker
-            polarRatio = 0.95
+            polarRatio = 0.65
         case 150..<180:
-            // Dead downwind - still fast with good VMG gybing
-            polarRatio = 0.85
+            // Dead downwind - VMG angle would be better
+            polarRatio = 0.55
         default:
-            polarRatio = 0.7
+            polarRatio = 0.4
         }
 
-        // Calculate target speed, capped at reasonable maximum
+        // Calculate target speed, capped at reasonable maximum for a keelboat
         let targetSpeed = tws * polarRatio
-        return min(targetSpeed, 15.0)  // Cap at 15 knots for racing boat
+        return min(targetSpeed, 10.0)  // Cap at 10 knots for displacement keelboat
     }
 
     /// Parse JSON string to Signal K delta
