@@ -323,7 +323,7 @@ class GeminiLiveClient: NSObject, ObservableObject {
             try audioSession.setPreferredSampleRate(48000)
 
             // Configure for voice chat with speaker output
-            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try audioSession.setActive(true)
 
             print("🎙️ Audio session configured: \(audioSession.sampleRate)Hz")

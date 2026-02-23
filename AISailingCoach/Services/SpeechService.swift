@@ -87,7 +87,7 @@ class SpeechService: NSObject, ObservableObject {
         }
 
         group.enter()
-        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+        AVAudioApplication.requestRecordPermission { granted in
             micAuthorized = granted
             print("Microphone: \(granted ? "granted" : "denied")")
             group.leave()
@@ -127,7 +127,7 @@ class SpeechService: NSObject, ObservableObject {
         // Configure audio session
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             print("❌ Audio session error: \(error.localizedDescription)")

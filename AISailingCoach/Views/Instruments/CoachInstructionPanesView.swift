@@ -93,11 +93,7 @@ struct MiniPerformancePane: View {
 
     var body: some View {
         InstructionPaneContainer(label: "PERFORMANCE") {
-            GeometryReader { geometry in
-                let size = geometry.size
-                let centerX = size.width / 2
-                let centerY = size.height / 2
-                let radius = min(size.width, size.height) / 2 - 10
+            GeometryReader { _ in
                 let strokeWidth: CGFloat = 8
 
                 ZStack {
