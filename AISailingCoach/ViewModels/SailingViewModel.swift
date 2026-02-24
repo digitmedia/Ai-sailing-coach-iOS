@@ -144,6 +144,24 @@ class SailingViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Subscribe to Signal K client connection state for auto-reconnect status
+        signalKClient?.$connectionState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self = self, self.useRealSignalK else { return }
+                switch state {
+                case .connected:
+                    self.connectionStatus = .connected
+                case .connecting, .reconnecting:
+                    self.connectionStatus = .connecting
+                case .disconnected:
+                    self.connectionStatus = .disconnected
+                case .error:
+                    self.connectionStatus = .error
+                }
+            }
+            .store(in: &cancellables)
+
         // Auto-connect to Signal K server if previously enabled
         if useRealSignalK {
             if let savedURL = UserDefaults.standard.string(forKey: "SignalKServerURL"), !savedURL.isEmpty {

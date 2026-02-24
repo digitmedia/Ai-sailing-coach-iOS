@@ -322,15 +322,26 @@ class SignalKClient: NSObject, ObservableObject, URLSessionWebSocketDelegate {
         case disconnected
         case connecting
         case connected
+        case reconnecting(attempt: Int)
         case error(String)
     }
 
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession?
     private var messageCount = 0
+    private var serverURL: URL?
+    private var shouldReconnect = false
+    private var reconnectAttempt = 0
+    private var reconnectTask: Task<Void, Never>?
 
     func connect(to url: URL) {
         print("🔌 SignalKClient: Connecting to \(url)")
+        serverURL = url
+        shouldReconnect = true
+        reconnectAttempt = 0
+        reconnectTask?.cancel()
+        reconnectTask = nil
+
         connectionState = .connecting
 
         // Create session that allows self-signed certificates (for local development)
@@ -340,6 +351,7 @@ class SignalKClient: NSObject, ObservableObject, URLSessionWebSocketDelegate {
         webSocketTask?.resume()
 
         connectionState = .connected
+        messageCount = 0
         print("✅ SignalKClient: WebSocket connected, waiting for messages...")
         receiveMessage()
     }
@@ -369,12 +381,15 @@ class SignalKClient: NSObject, ObservableObject, URLSessionWebSocketDelegate {
                     didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("🔌 SignalKClient: WebSocket closed with code: \(closeCode)")
         DispatchQueue.main.async {
-            self.connectionState = .disconnected
+            self.scheduleReconnect()
         }
     }
 
     func disconnect() {
         print("🔌 SignalKClient: Disconnecting")
+        shouldReconnect = false
+        reconnectTask?.cancel()
+        reconnectTask = nil
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         webSocketTask = nil
         connectionState = .disconnected
@@ -400,8 +415,35 @@ class SignalKClient: NSObject, ObservableObject, URLSessionWebSocketDelegate {
             case .failure(let error):
                 print("❌ SignalKClient: WebSocket error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self?.connectionState = .error(error.localizedDescription)
+                    self?.scheduleReconnect()
                 }
+            }
+        }
+    }
+
+    private func scheduleReconnect() {
+        guard shouldReconnect, let url = serverURL else {
+            connectionState = .disconnected
+            return
+        }
+
+        // Clean up old connection
+        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        webSocketTask = nil
+
+        reconnectAttempt += 1
+        let delay = min(pow(2.0, Double(reconnectAttempt - 1)), 30.0)
+        print("🔄 SignalKClient: Reconnecting in \(Int(delay))s (attempt \(reconnectAttempt))")
+        connectionState = .reconnecting(attempt: reconnectAttempt)
+
+        reconnectTask?.cancel()
+        reconnectTask = Task { [weak self, reconnectAttempt] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                guard let self, self.shouldReconnect,
+                      self.reconnectAttempt == reconnectAttempt else { return }
+                self.connect(to: url)
             }
         }
     }
